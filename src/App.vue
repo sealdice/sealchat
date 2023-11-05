@@ -1,10 +1,27 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
+import { zhCN, dateZhCN } from 'naive-ui'
+import { darkTheme } from 'naive-ui'
+import { NConfigProvider } from 'naive-ui'
+import type { GlobalTheme, GlobalThemeOverrides } from 'naive-ui'
+
+const themeOverrides: GlobalThemeOverrides = {
+  common: {
+    primaryColor: '#3388de',
+    primaryColorHover: '#3388de',
+    primaryColorPressed: '#3859b3',
+  },
+  Button: {
+    // textColor: '#FF0000'
+  }
+}
 </script>
 
 <template>
-  <RouterView />
+  <n-config-provider :locale="zhCN" :date-locale="dateZhCN" :theme-overrides="themeOverrides">
+    <RouterView />
+  </n-config-provider>
 </template>
 
 <style scoped>
