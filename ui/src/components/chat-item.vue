@@ -23,9 +23,7 @@ const props = defineProps({
         <span v-if="!props.isRtl" class="name">{{ props.username }}</span>
         <span class="time">{{ timeFormat(new Date().toString()) }}</span>
       </span>
-      <div class="content">
-        {{ props.content }}
-      </div>
+      <div class="content break-all">{{ props.content }}</div>
     </div>
   </div>
 </template>
