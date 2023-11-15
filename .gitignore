@@ -30,3 +30,5 @@ config.yaml
 version.yaml
 assets/
 data.db
+chat.db
+static/

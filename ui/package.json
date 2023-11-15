@@ -10,10 +10,16 @@
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false"
   },
   "dependencies": {
-    "axios": "^1.6.0",
+    "@satorijs/protocol": "^1.1.1",
+    "@satorijs/satori": "^3.1.5",
+    "axios": "^1.6.1",
     "dayjs": "^1.11.10",
+    "js-cookie": "^3.0.5",
     "lodash-es": "^4.17.21",
+    "nanoid": "^5.0.3",
     "pinia": "^2.1.7",
+    "queueing-subject": "^1.0.0",
+    "rxjs": "^7.8.1",
     "tailwindcss": "^3.3.5",
     "vue": "^3.3.4",
     "vue-router": "^4.2.5",
@@ -21,6 +27,7 @@
   },
   "devDependencies": {
     "@tsconfig/node18": "^18.2.2",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^18.18.5",
     "@vitejs/plugin-vue": "^4.4.0",
     "@vitejs/plugin-vue-jsx": "^3.0.2",

@@ -1,0 +1,65 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+project_name:
+  sealchat-backend
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+#    - go generate ./...
+builds:
+  - env:
+      - GO111MODULE=on
+      - CGO_ENABLED=0
+      - CGO_FLAGS=-Werror=unused-variable -Werror=implicit-function-declaration -O2 -H=windowsgui
+#    ldflags:
+#      -H windowsgui
+    goos:
+      - linux
+      - windows
+    goarch:
+      - amd64
+    flags:
+      - -trimpath
+      - -buildvcs=false
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - replacements:
+      darwin: darwin
+      linux: linux
+      windows: windows
+      386: i386
+      amd64: amd64
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - src: static
+        dst: .
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+#  name_template: "{{ incpatch }}"
+  name_template: "{{ incpatch .Version }}"
+
+changelog:
+  sort: asc
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
