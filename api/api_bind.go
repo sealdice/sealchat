@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -42,7 +43,12 @@ func Init() {
 	app.Use(config)
 	app.Use(recover.New())
 	app.Use(logger.New())
-	app.Static("/test", "./static")
+	app.Use(compress.New())
+
+	//app.Get("/test$", func(c *fiber.Ctx) error {
+	//	return c.Redirect("/test/")
+	//})
+	app.Static("/test/", "./static")
 
 	connMap := &utils.SyncMap[string, *websocket.Conn]{}
 

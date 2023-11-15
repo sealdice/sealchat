@@ -10,9 +10,6 @@ import type { AxiosResponse } from "axios";
 import { api } from "./_config";
 import { useChatStore } from "./chat";
 
-export const urlBase = '//' + window.location.hostname + ":" + 3212 + '/';
-// export const urlBase = '//' + window.location.host + '/';
-
 interface UserState {
   _accessToken: string
   info: UserInfo;

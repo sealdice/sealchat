@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid'
 import { groupBy } from 'lodash-es';
 import { Emitter } from '@/utils/event';
 import { useUserStore } from './user';
+import { urlBase } from './_config';
 
 interface ChatState {
   subject: WebSocketSubject<any> | null;
@@ -36,7 +37,9 @@ export const useChatStore = defineStore({
       const u: User = {
         id: '',
       }
-      const subject = webSocket('ws://localhost:3212/ws/seal');
+      
+      // 'ws://localhost:3212/ws/seal'
+      const subject = webSocket(`ws:${urlBase}/ws/seal`);
 
       let isReady = false;
 
