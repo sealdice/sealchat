@@ -3,7 +3,7 @@ import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
 import { zhCN, dateZhCN } from 'naive-ui'
 import { darkTheme } from 'naive-ui'
-import { NConfigProvider, NMessageProvider } from 'naive-ui'
+import { NConfigProvider, NMessageProvider, NDialogProvider } from 'naive-ui'
 import type { GlobalTheme, GlobalThemeOverrides } from 'naive-ui'
 
 const themeOverrides: GlobalThemeOverrides = {
@@ -21,7 +21,9 @@ const themeOverrides: GlobalThemeOverrides = {
 <template>
   <n-config-provider :locale="zhCN" :date-locale="dateZhCN" :theme-overrides="themeOverrides" style="height: 100%;">
     <n-message-provider>
-      <RouterView />
+      <n-dialog-provider>
+        <RouterView />
+      </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>
 </template>

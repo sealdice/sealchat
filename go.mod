@@ -10,6 +10,7 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/kardianos/service v1.2.2
 	github.com/matoous/go-nanoid/v2 v2.0.0
+	github.com/samber/lo v1.38.1
 	golang.org/x/crypto v0.15.0
 	gorm.io/gorm v1.25.5
 )
@@ -32,6 +33,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.50.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	modernc.org/libc v1.22.5 // indirect

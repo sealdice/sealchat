@@ -23,10 +23,11 @@ type ApiMsgPayload struct {
 }
 
 type ChatContext struct {
-	ConnMap *utils.SyncMap[string, *websocket.Conn]
-	Conn    *websocket.Conn
-	User    *model.UserModel
-	Echo    string
+	Conn            *websocket.Conn
+	User            *model.UserModel
+	Echo            string
+	ConnMap         *utils.SyncMap[string, *websocket.Conn]
+	ChannelUsersMap *utils.SyncMap[string, *utils.SyncSet[string]]
 }
 
 func Init() {
@@ -51,6 +52,7 @@ func Init() {
 	app.Static("/test/", "./static")
 
 	connMap := &utils.SyncMap[string, *websocket.Conn]{}
+	channelUsersMap := &utils.SyncMap[string, *utils.SyncSet[string]]{}
 
 	app.Use("/ws", func(c *fiber.Ctx) error {
 		// IsWebSocketUpgrade returns true if the client
@@ -146,7 +148,13 @@ func Init() {
 			if !solved {
 				apiMsg := ApiMsgPayload{}
 				err := json.Unmarshal(msg, &apiMsg)
-				ctx := &ChatContext{connMap, c, curUser, apiMsg.Echo}
+				ctx := &ChatContext{
+					Conn:            c,
+					User:            curUser,
+					Echo:            apiMsg.Echo,
+					ConnMap:         connMap,
+					ChannelUsersMap: channelUsersMap,
+				}
 
 				if err == nil {
 					switch apiMsg.Api {
@@ -155,6 +163,9 @@ func Init() {
 						solved = true
 					case "channel.list":
 						apiChannelList(ctx, msg)
+						solved = true
+					case "channel.enter":
+						apiChannelEnter(ctx, msg)
 						solved = true
 					// case "guild.list":
 					//	 apiChannelList(c, msg, apiMsg.Echo)

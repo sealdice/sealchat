@@ -30,9 +30,9 @@ func serviceInstall(isInstall bool) {
 	wd, _ := filepath.Abs(cwd)
 
 	svcConfig := &service.Config{
-		Name:             "huishen-backend",
-		DisplayName:      "huishen-backend",
-		Description:      "huishen-backend",
+		Name:             "sealchat-backend",
+		DisplayName:      "sealchat-backend",
+		Description:      "sealchat-backend",
 		WorkingDirectory: wd,
 	}
 

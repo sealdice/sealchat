@@ -8,18 +8,23 @@ import { groupBy } from 'lodash-es';
 import { Emitter } from '@/utils/event';
 import { useUserStore } from './user';
 import { urlBase } from './_config';
+import { useMessage } from 'naive-ui';
 
 interface ChatState {
   subject: WebSocketSubject<any> | null;
   // user: User,
-  channelTree: any,
+  channelTree: Channel[],
+  curChannel: Channel | null,
+  connectState: 'connecting' | 'connected' | 'disconnected' | 'reconnecting',
+  iReconnectAfterTime: number,
 }
 
 const apiMap = new Map<string, any>();
+let _connectResolve: any = null;
 
 type myEventName = EventName | 'message-created'; // 当前npm版本缺这个事件
 export const chatEvent = new Emitter<{
-  [key in myEventName]: (msg: Event) => void;
+  [key in myEventName]: (msg?: Event) => void;
   // 'message-created': (msg: Event) => void;
 }>();
 
@@ -30,14 +35,24 @@ export const useChatStore = defineStore({
     // user: { id: '1', },
     subject: null,
     channelTree: [],
+    curChannel: null,
+    connectState: 'connecting',
+    iReconnectAfterTime: 0,
   }),
 
+  getters: {
+    _lastChannel: (state) => {
+      return localStorage.getItem('lastChannel') || '';
+    }
+  },
+
   actions: {
-    async init() {
+    async connect() {
       const u: User = {
         id: '',
       }
-      
+      this.connectState = 'connecting';
+
       // 'ws://localhost:3212/ws/seal'
       const subject = webSocket(`ws:${urlBase}/ws/seal`);
 
@@ -56,7 +71,7 @@ export const useChatStore = defineStore({
           if (msg.op === 4) {
             console.log('svr ready', msg);
             isReady = true
-            this.wsReady();
+            this.connectReady();
           } else if (msg.op === 0) {
             // Opcode.EVENT
             const e = msg as Event;
@@ -66,16 +81,46 @@ export const useChatStore = defineStore({
             apiMap.delete(msg.echo);
           }
         },
-        error: err => console.log(err), // Called if at any point WebSocket API signals some kind of error.
+        error: err => {
+          console.log(err);
+          this.subject = null;
+          this.connectState = 'disconnected';
+          this.reconnectAfter(10)
+        }, // Called if at any point WebSocket API signals some kind of error.
         complete: () => console.log('complete') // Called when connection is closed (for whatever reason).
       });
 
       this.subject = subject;
     },
 
-    async reinit() {
+    async reconnectAfter(secs: number) {
+      setTimeout(async () => {
+        this.connectState = 'reconnecting';
+        // alert(`连接已断开，${secs} 秒后自动重连`);
+        for (let i = secs; i > 0; i--) {
+          this.iReconnectAfterTime = i;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        this.connect();          
+      }, 500);
+    },
+
+    async connectReady() {
+      this.connectState = 'connected';
+      await this.channelList();
+      if (_connectResolve) {
+        _connectResolve();
+        _connectResolve = null;
+      }
+    },
+
+    /** try to initialize */
+    async tryInit() {
       if (!this.subject) {
-        await this.init();
+        return new Promise((resolve) => {
+          _connectResolve = resolve;
+          this.connect();
+        });
       }
     },
 
@@ -96,20 +141,24 @@ export const useChatStore = defineStore({
       this.subject?.next(msg);
     },
 
-    async wsReady() {
-      // const resp = await this.sendAPI('channel.create', { name: '测试频道3' }) as APIChannelCreateResp;
-      // console.log(1111, resp);
-      this.channelList();
-    },
-    
     async channelCreate(name: string) {
-      const resp = await this.sendAPI('channel.create', { name: '测试频道' }) as APIChannelCreateResp;
+      const resp = await this.sendAPI('channel.create', { name }) as APIChannelCreateResp;
+    },
+
+    async channelSwitchTo(id: string) {
+      this.curChannel = this.channelTree.find(c => c.id === id) || this.curChannel;
+      await this.sendAPI('channel.enter', { 'channel_id': id });
+      localStorage.setItem('lastChannel', id);
+      this.channelList();
     },
 
     async channelList() {
       const resp = await this.sendAPI('channel.list', {}) as APIChannelListResp;
 
-      const groupedData = groupBy(resp.data, 'parent_id');
+      const curItem = resp.data.find(c => c.id === this.curChannel?.id);
+      this.curChannel = curItem || this.curChannel;
+
+      const groupedData = groupBy(resp.data, 'parentId');
       const buildTree = (parentId: string): any => {
         const children = groupedData[parentId] || [];
         return children.map((child: Channel) => ({
@@ -120,16 +169,38 @@ export const useChatStore = defineStore({
 
       const tree = buildTree('');
       this.channelTree = tree;
+
+      if (!this.curChannel) {
+        // 这是为了正确标记人数，有点屎但实现了
+        const lastChannel = this._lastChannel;
+        const c = this.channelTree.find(c => c.id === lastChannel);
+        if (c) {
+          this.channelSwitchTo(c.id);
+        } else {
+          this.channelSwitchTo(tree[0].id);
+        }
+      }
+
       return tree;
     },
 
-    async messageList(channelId: string) {
-      const resp = await this.sendAPI('message.list', { channel_id: channelId });
+    async channelRefresh() {
+      setInterval(async () => {
+        await this.channelList();
+        if (!this.channelTree.find(c => c.id === this.curChannel?.id)) {
+          this.curChannel = this.channelTree[0];
+          chatEvent.emit('channel-deleted', undefined)
+        }
+      }, 20000);
+    },
+
+    async messageList(channelId: string, next?: string) {
+      const resp = await this.sendAPI('message.list', { channel_id: channelId, next });
       return resp;
     },
 
     async messageCreate(content: string) {
-      const resp = await this.sendAPI('message.create', { channel_id: this.channelTree[0].id, content });
+      const resp = await this.sendAPI('message.create', { channel_id: this.curChannel?.id, content });
       console.log(1111, resp)
     },
 

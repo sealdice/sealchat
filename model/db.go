@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/glebarez/sqlite"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"gorm.io/gorm"
 	"time"
 )
@@ -41,6 +42,18 @@ func DBInit() {
 	db.AutoMigrate(&UserModel{})
 	db.AutoMigrate(&AccessTokenModel{})
 	db.AutoMigrate(&MemberModel{})
+
+	// 初始化默认频道
+	var channelCount int64
+	db.Model(&ChannelModel{}).Count(&channelCount)
+	if channelCount == 0 {
+		db.Create(&ChannelModel{
+			StringPKBaseModel: StringPKBaseModel{
+				ID: gonanoid.Must(),
+			},
+			Name: "默认",
+		})
+	}
 }
 
 func InitTestDB() *gorm.DB {

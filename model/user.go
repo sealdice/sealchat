@@ -1,12 +1,12 @@
 package model
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/blake2s"
-	"math/rand"
 	"sealchat/protocol"
 	"time"
 

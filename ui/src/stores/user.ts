@@ -29,6 +29,7 @@ export const useUserStore = defineStore({
       updatedAt: "",
       deletedAt: null,
       username: "",
+      nick: ''
     },
   }),
 
@@ -68,21 +69,24 @@ export const useUserStore = defineStore({
         // 向服务器发请求
         try {
           const resp = await api.get('api/v1/user/info', {
-            headers: { 'Authorization': this.token }      
+            headers: { 'Authorization': this.token }
           })
           if (!this.info) {
             // 初次进入
-            useChatStore().reinit();
+            useChatStore().tryInit();
           }
           this.info = resp.data.user as UserInfo;
           // console.log('check', this.info)
           this.lastCheckTime = Number(Date.now());
           return true;
-        } catch (e) {
-          // 未登录，清除数据
-          this.info.id = '';
-          localStorage.setItem('accessToken', '');
-          this._accessToken = '';
+        } catch (e: any) {
+          console.log(222, e);
+          if (e.code !== "ERR_NETWORK") {
+            // 未登录，清除数据
+            this.info.id = '';
+            localStorage.setItem('accessToken', '');
+            this._accessToken = '';
+          }
           return false;
         }
       } else {

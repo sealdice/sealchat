@@ -7,6 +7,7 @@ export interface UserInfo {
   updatedAt: null | string;
   deletedAt: null | string;
   username: string;
+  nick: string;
 }
 
 export interface TalkMessage {

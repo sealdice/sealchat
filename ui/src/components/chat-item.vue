@@ -11,11 +11,12 @@ const props = defineProps({
   content: String,
   avatar: String,
   isRtl: Boolean,
+  key: String,
 })
 </script>
 
 <template>
-  <div class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}" :class="props.isRtl ? ['is-rtl'] : []">
+  <div class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}" :class="props.isRtl ? ['is-rtl'] : []" :key="key">
     <img class="rounded-md w-12 h-12 border-gray-500 border" :src="props.avatar" />
     <!-- <n-avatar :src="imgAvatar" size="large" bordered>海豹</n-avatar> -->
     <div class="right">
@@ -23,7 +24,7 @@ const props = defineProps({
         <span v-if="!props.isRtl" class="name">{{ props.username }}</span>
         <span class="time">{{ timeFormat(new Date().toString()) }}</span>
       </span>
-      <div class="content break-all">{{ props.content }}</div>
+      <div class="content break-all whitespace-pre-wrap">{{ props.content }}</div>
     </div>
   </div>
 </template>

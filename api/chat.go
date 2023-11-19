@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"github.com/gofiber/contrib/websocket"
 	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"net/http"
 	"sealchat/model"
 	"sealchat/protocol"
 	"sealchat/utils"
+	"strconv"
 	"time"
 )
 
@@ -50,7 +52,45 @@ func apiChannelList(ctx *ChatContext, msg []byte) {
 		Echo: ctx.Echo,
 	}
 
+	for _, item := range items {
+		if x, exists := ctx.ChannelUsersMap.Load(item.ID); exists {
+			item.MembersCount = x.Len()
+		}
+	}
+
 	utils.Must0(c.WriteJSON(ret))
+}
+
+// 进入频道
+func apiChannelEnter(ctx *ChatContext, msg []byte) {
+	data := struct {
+		Data struct {
+			ChannelId string `json:"channel_id"`
+		} `json:"data"`
+	}{}
+	err := json.Unmarshal(msg, &data)
+	if err != nil {
+		return
+	}
+
+	ctx.ChannelUsersMap.Range(func(key string, value *utils.SyncSet[string]) bool {
+		value.Delete(ctx.User.ID)
+		return true
+	})
+
+	ids, exists := ctx.ChannelUsersMap.Load(data.Data.ChannelId)
+	if !exists {
+		ids = &utils.SyncSet[string]{}
+		ctx.ChannelUsersMap.Store(data.Data.ChannelId, ids)
+	}
+	ids.Add(ctx.User.ID)
+
+	utils.Must0(ctx.Conn.WriteJSON(struct {
+		protocol.Message
+		Echo string `json:"echo"`
+	}{
+		Echo: ctx.Echo,
+	}))
 }
 
 func apiMessageCreate(ctx *ChatContext, msg []byte) {
@@ -149,15 +189,34 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 	}
 
 	var items []*model.MessageModel
-	// TODO: 分页，next为created_at的时间戳转hex
-	db.Where("channel_id = ?", data.Data.ChannelID).
-		Order("created_at asc").
+
+	sql := db.Where("channel_id = ?", data.Data.ChannelID)
+
+	var count int64
+	if data.Data.Next != "" {
+		t, err := strconv.ParseInt(data.Data.Next, 36, 64)
+		if err != nil {
+			return
+		}
+
+		sql = sql.Where("created_at < ?", time.UnixMilli(t))
+	}
+
+	sql.Order("created_at desc").
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, nickname")
 		}).
 		Preload("Member", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, nickname, channel_id")
-		}).Find(&items)
+		}).Limit(30).Find(&items)
+
+	sql.Count(&count)
+	var next string
+
+	items = lo.Reverse(items)
+	if count > int64(len(items)) && len(items) > 0 {
+		next = strconv.FormatInt(items[0].CreatedAt.UnixMilli(), 36)
+	}
 
 	ret := struct {
 		Data []*model.MessageModel `json:"data"`
@@ -165,6 +224,7 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 		Echo string                `json:"echo"`
 	}{
 		Data: items,
+		Next: next,
 		Echo: ctx.Echo,
 	}
 

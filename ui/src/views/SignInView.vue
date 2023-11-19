@@ -99,7 +99,7 @@ const userStore = useUserStore();
 
 <template>
   <div class="flex h-full w-full justify-center items-center">
-    <div class="w-[50%] flex items-center justify-center flex-col">
+    <div class="w-[50%] flex items-center justify-center flex-col" style="min-width: 20rem;">
       <h2 class="font-bold text-xl mb-8">摸鱼中心</h2>
 
       <n-form ref="formRef" :model="model" :rules="rules" class="w-full px-8 max-w-md">
