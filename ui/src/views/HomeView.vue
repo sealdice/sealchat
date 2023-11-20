@@ -2,37 +2,47 @@
 import dayjs from 'dayjs';
 import imgAvatar from '@/assets/head2.png'
 import ChatItem from '@/components/chat-item.vue';
-import { computed, ref, watch, h, onMounted, onBeforeMount, nextTick, type Component } from 'vue'
+import { computed, ref, watch, h, onMounted, onBeforeMount, nextTick, type Component, inject } from 'vue'
 import { VirtualList } from 'vue-tiny-virtual-list';
-import type { TalkMessage } from '@/types';
 import { chatEvent, useChatStore } from '@/stores/chat';
 import type { Event, Message } from '@satorijs/protocol'
 import { useUserStore } from '@/stores/user';
 import { ArrowBarToDown, Plus } from '@vicons/tabler'
 import { NIcon, c, useDialog, useMessage } from 'naive-ui';
+import VueScrollTo from 'vue-scrollto'
 
 const message = useMessage()
 const dialog = useDialog()
 
 const virtualListRef = ref<InstanceType<typeof VirtualList> | null>(null);
+const messagesListRef = ref<HTMLElement | null>(null);
+const textInputRef = ref<any>(null);
 
 const rows = ref<Message[]>([]);
 
 const textToSend = ref('');
 const send = () => {
+  if (chat.connectState !== 'connected') {
+    message.error('尚未连接，请稍等');
+    return;
+  }
   const t = textToSend.value;
   if (t.trim() === '') {
     message.error('不能发送空消息');
     return;
   }
+  if (t.length > 10000) {
+    message.error('消息过长，请分段发送');
+    return;
+  }
   chat.messageCreate(t);
 
   textToSend.value = '';
-  virtualListRef.value?.scrollToBottom();
+  scrollToBottom();
 }
 
 const toBottom = () => {
-  virtualListRef.value?.scrollToBottom();
+  scrollToBottom();
   showButton.value = false;
 }
 
@@ -43,15 +53,29 @@ const isMe = (item: Message) => {
   return user.info.id === item.user?.id;
 }
 
-onBeforeMount(async () => {
+const scrollToBottom = () => {
+  // virtualListRef.value?.scrollToBottom();
+  nextTick(() => {
+    const elLst = messagesListRef.value;
+    if (elLst) {
+      elLst.scrollTop = elLst.scrollHeight;
+    }
+  });
+}
+
+onMounted(async () => {
   await chat.tryInit();
+  chatEvent.off('message-created', '*');
   chatEvent.on('message-created', (e?: Event) => {
     if (e && e.message && e.channel?.id == chat.curChannel?.id) {
       rows.value.push(e.message);
-      virtualListRef.value?.scrollToBottom();
+      if (!showButton.value) {
+        scrollToBottom();
+      }
     }
   });
 
+  chatEvent.off('channel-deleted', '*');
   chatEvent.on('channel-deleted', (e) => {
     if (!e) {
       // 当前频道没了，直接进行重载
@@ -81,7 +105,7 @@ const loadMessages = async () => {
   // }
 
   nextTick(() => {
-    virtualListRef.value?.scrollToBottom();
+    scrollToBottom();
     showButton.value = false;
   })
 }
@@ -99,19 +123,33 @@ const newChannel = async () => {
 
 const showButton = ref(false)
 const onScroll = (evt: any) => {
-  showButton.value = true;
+  // 会打断输入，不要blur
+  // if (textInputRef.value?.blur) {
+  //   (textInputRef.value as any).blur()
+  // }
+  // console.log(222, messagesListRef.value?.scrollTop, messagesListRef.value?.scrollHeight)
+  if (messagesListRef.value) {
+    const elLst = messagesListRef.value;
+    const offset = elLst.scrollHeight - (elLst.clientHeight + elLst.scrollTop);
+    showButton.value = offset > 200;
+
+    if (elLst.scrollTop === 0) {
+      reachTop(evt);
+    }
+  }
   // const vl = virtualListRef.value;
   // showButton.value = vl.clientRef.itemRefEl.clientHeight - vl.getOffset() > vl.clientRef.itemRefEl.clientHeight / 2
 }
 
-const keyUp = (e: KeyboardEvent) => {
+const keyUp = function (e: KeyboardEvent) {
   if (e.key === 'Enter' && (!e.ctrlKey) && (!e.shiftKey)) {
     send();
-  }
-}
+    e.preventDefault();
 
-const reachBottom = (evt: any) => {
-  showButton.value = false;
+    // if (textInputRef.value?.blur) {
+    //   (textInputRef.value as any).blur()
+    // }
+  }
 }
 
 let reachTopLoading = false;
@@ -123,8 +161,24 @@ const reachTop = async (evt: any) => {
     const messages = await chat.messageList(chat.curChannel?.id || '', messagesNextFlag.value);
     messagesNextFlag.value = messages.next || "";
     reachTopLoading = false;
+
+    let oldId = '';
+    if (rows.value.length) {
+      oldId = rows.value[0].id || '';
+    }
+
     rows.value.unshift(...messages.data);
-    virtualListRef.value?.scrollToIndex(messages.data.length);
+
+    nextTick(() => {
+      // 注意: el会变，如果不在下一帧取的话
+      const el = document.getElementById(oldId)
+      VueScrollTo.scrollTo(el, {
+        container: messagesListRef.value,
+        duration: 0,
+        offset: 0,
+      })
+    })
+    // virtualListRef.value?.scrollToIndex(messages.data.length);
   }
 }
 
@@ -176,7 +230,8 @@ const channelSelect = async (key: string) => {
           <span class="ml-4">
             <n-dropdown trigger="click" :options="chOptions" @select="channelSelect">
               <!-- <n-button>{{ chat.curChannel?.name || '加载中 ...' }}</n-button> -->
-              <n-button text>{{ chat.curChannel?.name ? `${chat.curChannel?.name} (${(chat.curChannel as any).membersCount})`
+              <n-button text>{{ chat.curChannel?.name ? `${chat.curChannel?.name} (${(chat.curChannel as
+                any).membersCount})`
                 : '加载中 ...' }} ▼</n-button>
             </n-dropdown>
           </span>
@@ -187,7 +242,8 @@ const channelSelect = async (key: string) => {
           <span v-if="chat.connectState === 'connecting'" class=" text-blue-500">连接中 ...</span>
           <span v-if="chat.connectState === 'connected'" class=" text-green-600">已连接</span>
           <span v-if="chat.connectState === 'disconnected'" class=" text-red-500">已断开</span>
-          <span v-if="chat.connectState === 'reconnecting'" class=" text-orange-400">{{ chat.iReconnectAfterTime }}s 后自动重连</span>
+          <span v-if="chat.connectState === 'reconnecting'" class=" text-orange-400">{{ chat.iReconnectAfterTime }}s
+            后自动重连</span>
           <!-- 这个其实有问题，应该是群内昵称 -->
           <span>{{ user.info.nick }}</span>
         </div>
@@ -201,14 +257,22 @@ const channelSelect = async (key: string) => {
 
       <n-layout>
         <div class="flex flex-col h-full justify-between">
-          <div class="chat overflow-y-auto h-full" v-show="rows.length > 0">
-            <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"
+          <div class="chat overflow-y-auto h-full px-4 pt-6" v-show="rows.length > 0" @scroll="onScroll"
+            ref="messagesListRef">
+            <!-- <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"
+              @toBottom="reachBottom" @toTop="reachTop"> -->
+            <template v-for="itemData in rows" :key="itemData.id">
+              <chat-item :avatar="imgAvatar" :username="itemData.member?.nick" :content="itemData.content"
+                :is-rtl="isMe(itemData)" :item="itemData" />
+            </template>
+
+            <!-- <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"
               @toBottom="reachBottom" @toTop="reachTop">
               <template #default="{ itemData }">
                 <chat-item :avatar="imgAvatar" :username="itemData.member?.nick" :content="itemData.content"
-                  :is-rtl="isMe(itemData)" />
+                  :is-rtl="isMe(itemData)" :createdAt="itemData.createdAt" />
               </template>
-            </VirtualList>
+            </VirtualList> -->
           </div>
           <div v-if="rows.length === 0" class="flex h-full items-center justify-center text-gray-400">说点什么吧</div>
 
@@ -224,9 +288,10 @@ const channelSelect = async (key: string) => {
 
           <!-- flex-grow -->
           <div class=" edit-area flex justify-between space-x-2 my-2 px-2">
-            <n-input type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keyup="keyUp"></n-input>
+            <n-input type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyUp"
+              ref="textInputRef"></n-input>
             <div class="flex" style="align-items: end; padding-bottom: 1px;">
-              <n-button class="" type="primary" @click="send">发送</n-button>
+              <n-button class="" type="primary" @click="send" :disabled="chat.connectState !== 'connected'">发送</n-button>
             </div>
           </div>
         </div>

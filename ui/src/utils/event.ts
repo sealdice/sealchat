@@ -40,11 +40,15 @@ export class Emitter<T extends EventsMap = EventsMap> {
    * @param {Function} handler Handler function to remove
    * @memberOf mitt
    */
-  off<K extends keyof T>(type: K, handler: T[K]) {
+  off<K extends keyof T>(type: K, handler: '*' | T[K]) {
     const handlers = this.all.get(type as string);
     if (handlers) {
       if (handler) {
-        handlers.splice(handlers.indexOf(handler) >>> 0, 1);
+        if (handler === '*') {
+          handlers.length = 0;
+        } else {
+          handlers.splice(handlers.indexOf(handler) >>> 0, 1);
+        }
       } else {
         handlers.length = 0;
       }

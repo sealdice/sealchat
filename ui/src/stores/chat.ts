@@ -28,6 +28,7 @@ export const chatEvent = new Emitter<{
   // 'message-created': (msg: Event) => void;
 }>();
 
+let pingLoopOn = false;
 
 export const useChatStore = defineStore({
   id: 'chat',
@@ -61,9 +62,11 @@ export const useChatStore = defineStore({
       // 发送协议握手
       // Opcode.IDENTIFY: 3
       const user = useUserStore();
-      subject.next({ op: 3, body: {
-        token: user.token,
-      }});
+      subject.next({
+        op: 3, body: {
+          token: user.token,
+        }
+      });
 
       subject.subscribe({
         next: (msg: any) => {
@@ -82,10 +85,18 @@ export const useChatStore = defineStore({
           }
         },
         error: err => {
-          console.log(err);
+          console.log('ws error', err);
           this.subject = null;
           this.connectState = 'disconnected';
-          this.reconnectAfter(10)
+          this.reconnectAfter(5, () => {
+            try {
+              err.target?.close();
+              this.subject?.unsubscribe();
+              console.log('try close');
+            } catch (e) {
+              console.log('unsubscribe error', e)
+            }
+          })
         }, // Called if at any point WebSocket API signals some kind of error.
         complete: () => console.log('complete') // Called when connection is closed (for whatever reason).
       });
@@ -93,7 +104,7 @@ export const useChatStore = defineStore({
       this.subject = subject;
     },
 
-    async reconnectAfter(secs: number) {
+    async reconnectAfter(secs: number, beforeConnect?: Function) {
       setTimeout(async () => {
         this.connectState = 'reconnecting';
         // alert(`连接已断开，${secs} 秒后自动重连`);
@@ -101,12 +112,28 @@ export const useChatStore = defineStore({
           this.iReconnectAfterTime = i;
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        this.connect();          
+        if (beforeConnect) beforeConnect();
+        this.connect();
       }, 500);
     },
 
     async connectReady() {
       this.connectState = 'connected';
+
+      if (!pingLoopOn) {
+        pingLoopOn = true;
+        const user = useUserStore();
+        setInterval(async () => {
+          if (this.subject) {
+            this.subject.next({
+              op: 1, body: {
+                token: user.token,
+              }
+            });
+          }
+        }, 10000)
+      }
+
       await this.channelList();
       if (_connectResolve) {
         _connectResolve();
@@ -128,7 +155,7 @@ export const useChatStore = defineStore({
       const echo = nanoid();
       return new Promise((resolve, reject) => {
         apiMap.set(echo, { resolve, reject });
-        this.subject?.next({ api, data, echo });        
+        this.subject?.next({ api, data, echo });
       })
     },
 
@@ -200,7 +227,8 @@ export const useChatStore = defineStore({
     },
 
     async messageCreate(content: string) {
-      const resp = await this.sendAPI('message.create', { channel_id: this.curChannel?.id, content });
+      // const resp = await this.sendAPI('message.create', { channel_id: this.curChannel?.id, content });
+      const resp = await this.sendAPI('qqq.x', { channel_id: this.curChannel?.id, content });
       console.log(1111, resp)
     },
 

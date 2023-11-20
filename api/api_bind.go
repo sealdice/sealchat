@@ -9,12 +9,12 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"log"
 	"sealchat/model"
 	"sealchat/protocol"
 	"sealchat/utils"
-
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"time"
 )
 
 type ApiMsgPayload struct {
@@ -26,8 +26,13 @@ type ChatContext struct {
 	Conn            *websocket.Conn
 	User            *model.UserModel
 	Echo            string
-	ConnMap         *utils.SyncMap[string, *websocket.Conn]
+	ConnMap         *utils.SyncMap[string, *ConnInfo]
 	ChannelUsersMap *utils.SyncMap[string, *utils.SyncSet[string]]
+}
+
+type ConnInfo struct {
+	Conn         *websocket.Conn
+	LastPingTime int64
 }
 
 func Init() {
@@ -51,8 +56,27 @@ func Init() {
 	//})
 	app.Static("/test/", "./static")
 
-	connMap := &utils.SyncMap[string, *websocket.Conn]{}
+	connMap := &utils.SyncMap[string, *ConnInfo]{}
 	channelUsersMap := &utils.SyncMap[string, *utils.SyncSet[string]]{}
+
+	go func() {
+		// 持续删除超时连接
+		for {
+			time.Sleep(5 * time.Second)
+			connMap.Range(func(key string, value *ConnInfo) bool {
+				if time.Now().Unix()-value.LastPingTime > 60 {
+					_ = value.Conn.Close()
+					connMap.Delete(key)
+
+					channelUsersMap.Range(func(key string, value *utils.SyncSet[string]) bool {
+						value.Delete(key)
+						return true
+					})
+				}
+				return true
+			})
+		}
+	}()
 
 	app.Use("/ws", func(c *fiber.Ctx) error {
 		// IsWebSocketUpgrade returns true if the client
@@ -113,7 +137,7 @@ func Init() {
 								if token, ok := tokenAny.(string); ok {
 									user, err := model.UserVerifyAccessToken(token)
 									if err == nil {
-										connMap.Store(user.ID, c)
+										connMap.Store(user.ID, &ConnInfo{Conn: c, LastPingTime: time.Now().Unix()})
 										curUser = user
 										utils.Must0(c.WriteJSON(protocol.GatewayPayloadStructure{
 											Op: protocol.OpReady,
@@ -137,7 +161,14 @@ func Init() {
 					}))
 					solved = true
 				case protocol.OpPing:
-					fmt.Println("ping")
+					connMap.Range(func(key string, value *ConnInfo) bool {
+						if value.Conn == c {
+							value.LastPingTime = time.Now().Unix()
+							return false
+						}
+						return true
+					})
+
 					utils.Must0(c.WriteJSON(protocol.GatewayPayloadStructure{
 						Op: protocol.OpPong,
 					}))
@@ -170,7 +201,7 @@ func Init() {
 					// case "guild.list":
 					//	 apiChannelList(c, msg, apiMsg.Echo)
 					//	 solved = true
-					case "message.create":
+					case "message.create", "qqq.x":
 						apiMessageCreate(ctx, msg)
 						solved = true
 					case "message.list":

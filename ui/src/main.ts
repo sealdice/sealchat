@@ -12,7 +12,13 @@ app.use(createPinia())
 app.use(router)
 
 import './assets/main.css'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
+
+dayjs.locale('zh-cn')
+dayjs.extend(relativeTime)
+
 import { useUserStore } from './stores/user'
 
 router.beforeEach(async (to, from, next) => {

@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import imgAvatar from '@/assets/head2.png'
+import type { Event, Message } from '@satorijs/protocol'
+import { onMounted, ref } from 'vue';
 
-function timeFormat(time: string) {
-  return dayjs(time).format('MM-DD HH:mm:ss');
+function timeFormat(time?: string) {
+  if (!time) return '未知';
+  // console.log('???', time, typeof time)
+  // return dayjs(time).format('MM-DD HH:mm:ss');
+  return dayjs(time).fromNow();
 }
 
 const props = defineProps({
@@ -12,17 +17,26 @@ const props = defineProps({
   avatar: String,
   isRtl: Boolean,
   key: String,
+  item: Object,
+})
+
+const timeText = ref(timeFormat(props.item?.createdAt));
+
+onMounted(() => {
+  setInterval(() => {
+    timeText.value = timeFormat(props.item?.createdAt);
+  }, 10000);
 })
 </script>
 
 <template>
-  <div class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}" :class="props.isRtl ? ['is-rtl'] : []" :key="key">
+  <div :id="item?.id" class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}" :class="props.isRtl ? ['is-rtl'] : []" :key="key">
     <img class="rounded-md w-12 h-12 border-gray-500 border" :src="props.avatar" />
     <!-- <n-avatar :src="imgAvatar" size="large" bordered>海豹</n-avatar> -->
     <div class="right">
       <span class="title">
         <span v-if="!props.isRtl" class="name">{{ props.username }}</span>
-        <span class="time">{{ timeFormat(new Date().toString()) }}</span>
+        <span class="time">{{ timeText }}</span>
       </span>
       <div class="content break-all whitespace-pre-wrap">{{ props.content }}</div>
     </div>
@@ -40,6 +54,9 @@ const props = defineProps({
   &.is-rtl {
     >.right {
       @apply mr-4;
+      >.title {
+        @apply justify-end;
+      }
 
       >.content {
         &:before {

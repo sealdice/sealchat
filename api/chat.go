@@ -130,11 +130,12 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 		channelData := &protocol.Channel{ID: data.Data.ChannelID}
 
 		messageData := &protocol.Message{
-			ID:      m.ID,
-			Content: content,
-			Channel: channelData,
-			User:    userData,
-			Member:  member.ToProtocolType(),
+			ID:        m.ID,
+			Content:   content,
+			Channel:   channelData,
+			User:      userData,
+			Member:    member.ToProtocolType(),
+			CreatedAt: time.Now().UnixMilli(), // 跟js相匹配
 		}
 
 		utils.Must0(c.WriteJSON(struct {
@@ -146,8 +147,8 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 		}))
 
 		// 发出广播事件
-		ctx.ConnMap.Range(func(key string, value *websocket.Conn) bool {
-			utils.Must0(value.WriteJSON(struct {
+		ctx.ConnMap.Range(func(key string, value *ConnInfo) bool {
+			utils.Must0(value.Conn.WriteJSON(struct {
 				protocol.Event
 				Op protocol.Opcode `json:"op"`
 			}{

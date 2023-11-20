@@ -82,8 +82,8 @@ type Message struct {
 	Elements  []*Element   `json:"elements"`
 	Timestamp int          `json:"timestamp"`
 	Quote     *Message     `json:"quote"`
-	CreatedAt int          `json:"created_at"`
-	UpdatedAt int          `json:"updated_at"`
+	CreatedAt int64        `json:"createdAt"`
+	UpdatedAt int64        `json:"updatedAt"`
 }
 
 type Button struct {
