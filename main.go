@@ -1,14 +1,16 @@
 package main
 
 import (
-	"fmt"
+	"embed"
 	"os"
 	"sealchat/api"
 	"sealchat/model"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/spf13/afero"
 )
+
+//go:embed ui/dist
+var embedDirStatic embed.FS
 
 func main() {
 	var opts struct {
@@ -30,9 +32,6 @@ func main() {
 		return
 	}
 
-	var AppFs = afero.NewMemMapFs()
-	fmt.Println("111", AppFs)
-
 	model.DBInit()
-	api.Init()
+	api.Init(embedDirStatic)
 }

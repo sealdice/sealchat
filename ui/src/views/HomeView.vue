@@ -326,7 +326,7 @@ const sendEmoji = throttle((i: Thumb) => {
               </template>
 
               <template #suffix>
-                <n-space>f
+                <n-space>
                   <n-popover trigger="hover">
                     <template #trigger>
                       <n-button text @click="doUpload">

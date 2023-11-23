@@ -3,11 +3,16 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"io/fs"
 	"log"
+	"net/http"
 	"sealchat/model"
 	"sealchat/protocol"
 	"sealchat/utils"
 	"time"
+
+	_ "embed"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
@@ -30,7 +35,7 @@ type ConnInfo struct {
 
 var appFs afero.Fs
 
-func Init() {
+func Init(uiStatic fs.FS) {
 	config := cors.New(cors.Config{
 		AllowOrigins:     "*",
 		AllowMethods:     "GET, POST, PUT, DELETE",
@@ -48,10 +53,12 @@ func Init() {
 	app.Use(logger.New())
 	app.Use(compress.New())
 
-	//app.Get("/test$", func(c *fiber.Ctx) error {
-	//	return c.Redirect("/test/")
-	//})
-	app.Static("/test/", "./static")
+	//app.Static("/test/", "./static")
+	app.Use("/test", filesystem.New(filesystem.Config{
+		Root:       http.FS(uiStatic),
+		PathPrefix: "ui/dist",
+		MaxAge:     5 * 60,
+	}))
 
 	connMap := &utils.SyncMap[string, *ConnInfo]{}
 	channelUsersMap := &utils.SyncMap[string, *utils.SyncSet[string]]{}

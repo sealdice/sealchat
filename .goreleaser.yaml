@@ -37,9 +37,6 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-    files:
-      - src: static
-        dst: .
 
 checksum:
   name_template: 'checksums.txt'
