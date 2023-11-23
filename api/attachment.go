@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/hex"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/afero"
+	"sealchat/model"
 )
 
 func Upload(c *fiber.Ctx) error {
@@ -11,6 +13,12 @@ func Upload(c *fiber.Ctx) error {
 	form, err := c.MultipartForm()
 	if err != nil {
 		return err
+	}
+
+	var channelId string
+	channelIds := c.GetReqHeaders()["channel_id"]
+	if len(channelIds) > 0 {
+		channelId = channelIds[0]
 	}
 
 	// 获取上传的文件切片
@@ -36,14 +44,23 @@ func Upload(c *fiber.Ctx) error {
 			return err
 		}
 		hexString := hex.EncodeToString(hashCode)
+		fn := fmt.Sprintf("%s_%d", hexString, file.Size)
 
 		_ = tempFile.Close()
-		err = appFs.Rename(tempFile.Name(), "./assets/upload/"+hexString)
+		err = appFs.Rename(tempFile.Name(), "./assets/upload/"+fn)
 		if err != nil {
 			return err
 		}
 
-		filenames = append(filenames, hexString)
+		model.AttachmentCreate(&model.Attachment{
+			Filename:  file.Filename,
+			Size:      file.Size,
+			Hash:      hashCode,
+			ChannelID: channelId,
+			UserID:    getCurUser(c).ID,
+		})
+
+		filenames = append(filenames, fn)
 	}
 
 	return c.JSON(fiber.Map{

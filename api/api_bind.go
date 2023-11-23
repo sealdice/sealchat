@@ -34,7 +34,7 @@ func Init() {
 	config := cors.New(cors.Config{
 		AllowOrigins:     "*",
 		AllowMethods:     "GET, POST, PUT, DELETE",
-		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, channel_id",
 		ExposeHeaders:    "Content-Length",
 		AllowCredentials: false,
 		MaxAge:           3600,

@@ -17,3 +17,14 @@ export function formDataToJson(formData: FormData): Record<string, any> {
 
   return jsonObject;
 }
+
+export function blobToArrayBuffer(blob: Blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(reader.result);
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(blob);
+  }) as Promise<string | ArrayBuffer | null>;
+}

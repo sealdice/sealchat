@@ -7,15 +7,24 @@ import { VirtualList } from 'vue-tiny-virtual-list';
 import { chatEvent, useChatStore } from '@/stores/chat';
 import type { Event, Message } from '@satorijs/protocol'
 import { useUserStore } from '@/stores/user';
-import { ArrowBarToDown, Plus } from '@vicons/tabler'
+import { ArrowBarToDown, Plus, Upload } from '@vicons/tabler'
 import { NIcon, c, useDialog, useMessage } from 'naive-ui';
 import VueScrollTo from 'vue-scrollto'
-import Upload from './upload.vue'
+import UploadSupport from './upload.vue'
+import { liveQuery } from "dexie";
+import { useObservable } from "@vueuse/rxjs";
+import { db, getSrc, type Thumb } from '@/models';
+import { throttle } from 'lodash-es';
+
+const uploadImages = useObservable<Thumb[]>(
+  liveQuery(() => db.thumbs.toArray()) as any
+)
 
 const message = useMessage()
 const dialog = useDialog()
 
 const virtualListRef = ref<InstanceType<typeof VirtualList> | null>(null);
+const uploadSupportRef = ref<any>(null);
 const messagesListRef = ref<HTMLElement | null>(null);
 const textInputRef = ref<any>(null);
 
@@ -49,6 +58,10 @@ const toBottom = () => {
 
 const chat = useChatStore();
 const user = useUserStore();
+
+const doUpload = () => {
+  uploadSupportRef.value.openUpload();
+}
 
 const isMe = (item: Message) => {
   return user.info.id === item.user?.id;
@@ -218,6 +231,10 @@ const channelSelect = async (key: string) => {
     loadMessages();
   }
 }
+
+const sendEmoji = throttle((i: Thumb) => {
+  chat.messageCreate(`<img src="id:${i.id}" />`)
+}, 1000)
 </script>
 
 <template>
@@ -289,8 +306,41 @@ const channelSelect = async (key: string) => {
 
           <!-- flex-grow -->
           <div class=" edit-area flex justify-between space-x-2 my-2 px-2">
-            <n-input type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyUp"
-              ref="textInputRef"></n-input>
+            <n-input type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyUp" ref="textInputRef">
+              <template #prefix>
+                <n-popover trigger="click">
+                  <template #trigger>
+                    <n-button text>
+                      <template #icon>
+                        <n-icon :component="Plus" size="20" />
+                      </template>
+                    </n-button>
+                  </template>
+                  <div class=" text-base">表情(仅当前设备)</div>
+                  <div class="grid grid-cols-4 gap-4">
+                    <div v-for="i in uploadImages"  @click="sendEmoji(i)">
+                      <img :src="getSrc(i)" style="width: 4.8rem; height: 4.8rem; object-fit: contain;" />
+                    </div>
+                  </div>
+                </n-popover>
+              </template>
+
+              <template #suffix>
+                <n-space>f
+                  <n-popover trigger="hover">
+                    <template #trigger>
+                      <n-button text @click="doUpload">
+                        <template #icon>
+                          <n-icon :component="Upload" size="20" />
+                        </template>
+                      </n-button>
+                    </template>
+                    <span>上传图片</span>
+                  </n-popover>
+
+                </n-space>
+              </template>
+            </n-input>
             <div class="flex" style="align-items: end; padding-bottom: 1px;">
               <n-button class="" type="primary" @click="send" :disabled="chat.connectState !== 'connected'">发送</n-button>
             </div>
@@ -305,7 +355,7 @@ const channelSelect = async (key: string) => {
       <n-input v-model:value="newChannelName"></n-input>
     </n-modal>
 
-    <upload />
+    <upload-support ref="uploadSupportRef" />
   </main>
 </template>
 

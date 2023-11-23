@@ -12,8 +12,10 @@
   "dependencies": {
     "@satorijs/protocol": "^1.1.1",
     "@satorijs/satori": "^3.1.5",
+    "@vueuse/rxjs": "^10.6.1",
     "axios": "^1.6.1",
     "dayjs": "^1.11.10",
+    "dexie": "^3.2.4",
     "dompurify": "^3.0.6",
     "filesize": "^10.1.0",
     "js-cookie": "^3.0.5",

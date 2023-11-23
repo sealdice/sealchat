@@ -6,26 +6,41 @@ import { useUserStore } from '@/stores/user';
 import { filesize } from "filesize";
 import { useMessage } from 'naive-ui';
 import { useChatStore } from '@/stores/chat';
+import { blobToArrayBuffer } from '@/utils/tools';
+import { db } from '@/models/index';
 
 const user = useUserStore();
 const chat = useChatStore();
 const message = useMessage()
 
 const files = ref<any[]>([])
+
 const uploadRef = ref<any>(null)
+const dragAreaRef = ref<any>(null);
 const putAction = urlBase + '/api/v1/upload'
+
 const headers = computed(() => {
   return {
+    'channel_id': `${chat.curChannel?.id}`,
     Authorization: `${user.token}`
   }
 })
 
-const inputFile = (newFile: any, oldFile: any) => {
+const inputFile = async (newFile: any, oldFile: any) => {
   if (newFile && oldFile && !newFile.active && oldFile.active) {
     // 获得相应数据
     console.log('response', newFile.response.files)
     dialogVisible.value = false;
     files.value = [];
+
+    const x = db.thumbs.add({
+      id: newFile.response.files[0],
+      recentUsed: Number(Date.now()),
+      filename: newFile.file.name,
+      mimeType: newFile.file.type,
+      data: await blobToArrayBuffer(newFile.file),
+    });
+    console.log(222, x);
 
     if (newFile.xhr) {
       if (newFile.xhr.status === 200) {
@@ -80,13 +95,48 @@ document.addEventListener('paste', function (event) {
 });
 
 const dialogVisible = ref(false)
+
+const isDropShow = computed(() => {
+  return Boolean(uploadRef.value && uploadRef.value.dropActive)
+});
+
+
+function preventDefaults(e: any) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+['drop', 'dragover'].forEach(eventName => {
+  document.body.addEventListener(eventName, preventDefaults, false);
+});
+
+onMounted(() => {
+  dragAreaRef.value.addEventListener('drop', (e: any) => {
+      // 有开着的就替换掉，但是不用做其余操作
+      uploadRef.value.dropActive = false; // 反应太慢，这里加速一下
+    uploadRef.value.add(e.dataTransfer.files[0])
+    preventDefaults(e);
+  }, false);
+})
+
+defineExpose({
+  openUpload: () => {
+    const el = uploadRef.value.$el;
+    el.querySelector('input').click();
+  }
+
+})
 </script>
 
 <template>
-  <div class="  absolute">
+  <div class=" absolute">
     <file-upload ref="uploadRef" v-model="files" :post-action="putAction" @input-file="inputFile"
-      @input-filter="inputFilter" :headers="headers" :size="fileSizeLimit">
+      @input-filter="inputFilter" :headers="headers" :size="fileSizeLimit" :drop="true" :drop-directory="false">
     </file-upload>
+  </div>
+
+  <div class="drop-active" v-show="isDropShow" ref="dragAreaRef">
+    拖拽到这里上传
   </div>
 
   <n-modal v-model:show="dialogVisible" preset="dialog" title="上传文件" :auto-focus="false">
@@ -113,3 +163,18 @@ const dialogVisible = ref(false)
     </template>
   </n-modal>
 </template>
+
+<style lang="scss">
+.drop-active {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  position: fixed;
+  z-index: 9999;
+  opacity: .6;
+  text-align: center;
+  background: #000;
+}
+</style>
+```
