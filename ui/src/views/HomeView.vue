@@ -10,6 +10,7 @@ import { useUserStore } from '@/stores/user';
 import { ArrowBarToDown, Plus } from '@vicons/tabler'
 import { NIcon, c, useDialog, useMessage } from 'naive-ui';
 import VueScrollTo from 'vue-scrollto'
+import Upload from './upload.vue'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -304,6 +305,7 @@ const channelSelect = async (key: string) => {
       <n-input v-model:value="newChannelName"></n-input>
     </n-modal>
 
+    <upload />
   </main>
 </template>
 

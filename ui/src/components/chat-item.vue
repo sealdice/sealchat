@@ -1,14 +1,39 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import imgAvatar from '@/assets/head2.png'
-import type { Event, Message } from '@satorijs/protocol'
+import Element from '@satorijs/element'
 import { onMounted, ref } from 'vue';
+import { urlBase } from '@/stores/_config';
+import DOMPurify from 'dompurify';
+
 
 function timeFormat(time?: string) {
   if (!time) return '未知';
   // console.log('???', time, typeof time)
   // return dayjs(time).format('MM-DD HH:mm:ss');
   return dayjs(time).fromNow();
+}
+
+const parseContent = (props: any) => {
+  const content = props.content;
+  const items = Element.parse(content);
+  let textItems = []
+
+  for (const item of items) {
+    switch (item.type) {
+      case 'img':
+        if (item.attrs.src && item.attrs.src.startsWith('id:')) {
+          item.attrs.src = item.attrs.src.replace('id:', `${urlBase}/api/v1/attachments/`);
+        }
+        textItems.push(DOMPurify.sanitize(item.toString()));
+        break;
+      default:
+        textItems.push(`<span style="white-space: pre-wrap">${ item.toString() }</span>`);
+        break;
+    }
+  }
+
+  return textItems.join('');
 }
 
 const props = defineProps({
@@ -30,7 +55,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :id="item?.id" class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}" :class="props.isRtl ? ['is-rtl'] : []" :key="key">
+  <div :id="item?.id" class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}"
+    :class="props.isRtl ? ['is-rtl'] : []" :key="key">
     <img class="rounded-md w-12 h-12 border-gray-500 border" :src="props.avatar" />
     <!-- <n-avatar :src="imgAvatar" size="large" bordered>海豹</n-avatar> -->
     <div class="right">
@@ -38,7 +64,7 @@ onMounted(() => {
         <span v-if="!props.isRtl" class="name">{{ props.username }}</span>
         <span class="time">{{ timeText }}</span>
       </span>
-      <div class="content break-all whitespace-pre-wrap">{{ props.content }}</div>
+      <div class="content break-all" v-html="parseContent(props)"></div>
     </div>
   </div>
 </template>
@@ -54,6 +80,7 @@ onMounted(() => {
   &.is-rtl {
     >.right {
       @apply mr-4;
+
       >.title {
         @apply justify-end;
       }
@@ -62,6 +89,7 @@ onMounted(() => {
         &:before {
           display: none;
         }
+
         &::after {
           position: absolute;
           top: 0.5rem;

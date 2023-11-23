@@ -5,6 +5,7 @@ import (
 	"github.com/kardianos/service"
 	"os"
 	"path/filepath"
+	"sealchat/utils"
 )
 
 type program struct{}
@@ -57,11 +58,11 @@ func serviceInstall(isInstall bool) {
 		}
 
 		fmt.Println("安装完成，正在启动……")
-		s.Start()
+		utils.Must0(s.Start())
 	} else {
 		fmt.Println("正在卸载系统服务……")
-		s.Stop()
-		s.Uninstall()
+		utils.Must0(s.Stop())
+		utils.Must0(s.Uninstall())
 		fmt.Println("系统服务已删除")
 	}
 }

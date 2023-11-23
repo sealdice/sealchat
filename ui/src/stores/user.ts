@@ -1,6 +1,6 @@
 import { defineStore } from "pinia"
 import type { UserInfo } from "@/types";
-// import Cookies from 'js-cookie';
+import Cookies from 'js-cookie';
 // import router from "@/router";
 
 import axiosFactory from "axios"
@@ -37,6 +37,7 @@ export const useUserStore = defineStore({
     token: (state) => {
       if (!state._accessToken) {
         state._accessToken = localStorage.getItem('accessToken') || '';
+        Cookies.set('Authorization', state._accessToken);
         // state._accessToken = Cookies.get('accessToken') || '';
       }
       return state._accessToken;

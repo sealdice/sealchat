@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"sealchat/model"
@@ -11,12 +10,19 @@ import (
 func SignCheckMiddleware(c *fiber.Ctx) error {
 	//token := c.Cookies("token")
 	var token string
+
 	tokens := c.GetReqHeaders()["Authorization"]
 	if len(tokens) > 0 {
 		token = tokens[0]
 	}
 
-	fmt.Println("111", token)
+	cookieToken := c.Cookies("Authorization")
+	isWriteCookie := token != "" && cookieToken != token
+
+	if token == "" {
+		token = cookieToken
+	}
+
 	user, err := model.UserVerifyAccessToken(token)
 	if err != nil {
 		//fmt.Println(err.Error())
@@ -35,6 +41,15 @@ func SignCheckMiddleware(c *fiber.Ctx) error {
 	//	}
 	//} else {
 	c.Locals("user", user)
+
+	if isWriteCookie {
+		c.Cookie(&fiber.Cookie{
+			Name:   "Authorization",
+			Value:  token,
+			MaxAge: 3600, // 存活时间为3600秒
+		})
+	}
+
 	//}
 
 	return c.Next()

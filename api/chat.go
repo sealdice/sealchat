@@ -73,17 +73,24 @@ func apiChannelEnter(ctx *ChatContext, msg []byte) {
 		return
 	}
 
+	channelId := data.Data.ChannelId
+
 	ctx.ChannelUsersMap.Range(func(key string, value *utils.SyncSet[string]) bool {
 		value.Delete(ctx.User.ID)
 		return true
 	})
 
-	ids, exists := ctx.ChannelUsersMap.Load(data.Data.ChannelId)
+	ids, exists := ctx.ChannelUsersMap.Load(channelId)
 	if !exists {
 		ids = &utils.SyncSet[string]{}
-		ctx.ChannelUsersMap.Store(data.Data.ChannelId, ids)
+		ctx.ChannelUsersMap.Store(channelId, ids)
 	}
 	ids.Add(ctx.User.ID)
+
+	ctx.BroadcastEventInChannel(channelId, &protocol.Event{
+		Type: "channel-entered",
+		User: ctx.User.ToProtocolType(),
+	})
 
 	utils.Must0(ctx.Conn.WriteJSON(struct {
 		protocol.Message
@@ -147,22 +154,12 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 		}))
 
 		// 发出广播事件
-		ctx.ConnMap.Range(func(key string, value *ConnInfo) bool {
-			utils.Must0(value.Conn.WriteJSON(struct {
-				protocol.Event
-				Op protocol.Opcode `json:"op"`
-			}{
-				// 协议规定: 事件中必须含有 channel，message，user
-				Event: protocol.Event{
-					Type:      protocol.EventMessageCreated,
-					Timestamp: time.Now().Unix(),
-					Message:   messageData,
-					Channel:   channelData,
-					User:      userData,
-				},
-				Op: protocol.OpEvent,
-			}))
-			return true
+		ctx.BroadcastEvent(&protocol.Event{
+			// 协议规定: 事件中必须含有 channel，message，user
+			Type:    protocol.EventMessageCreated,
+			Message: messageData,
+			Channel: channelData,
+			User:    userData,
 		})
 	} else {
 		utils.Must0(c.WriteJSON(struct {

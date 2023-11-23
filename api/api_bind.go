@@ -3,18 +3,19 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"sealchat/model"
+	"sealchat/protocol"
+	"sealchat/utils"
+	"time"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	gonanoid "github.com/matoous/go-nanoid/v2"
-	"log"
-	"sealchat/model"
-	"sealchat/protocol"
-	"sealchat/utils"
-	"time"
+	"github.com/spf13/afero"
 )
 
 type ApiMsgPayload struct {
@@ -22,18 +23,12 @@ type ApiMsgPayload struct {
 	Echo string `json:"echo"`
 }
 
-type ChatContext struct {
-	Conn            *websocket.Conn
-	User            *model.UserModel
-	Echo            string
-	ConnMap         *utils.SyncMap[string, *ConnInfo]
-	ChannelUsersMap *utils.SyncMap[string, *utils.SyncSet[string]]
-}
-
 type ConnInfo struct {
 	Conn         *websocket.Conn
 	LastPingTime int64
 }
+
+var appFs afero.Fs
 
 func Init() {
 	config := cors.New(cors.Config{
@@ -44,6 +39,8 @@ func Init() {
 		AllowCredentials: false,
 		MaxAge:           3600,
 	})
+
+	appFs = afero.NewOsFs()
 
 	app := fiber.New()
 	app.Use(config)
@@ -63,18 +60,30 @@ func Init() {
 		// 持续删除超时连接
 		for {
 			time.Sleep(5 * time.Second)
+			now := time.Now().Unix()
+			oldLen := connMap.Len()
 			connMap.Range(func(key string, value *ConnInfo) bool {
-				if time.Now().Unix()-value.LastPingTime > 60 {
+				if now-value.LastPingTime > 20 {
 					_ = value.Conn.Close()
 					connMap.Delete(key)
 
-					channelUsersMap.Range(func(key string, value *utils.SyncSet[string]) bool {
+					channelUsersMap.Range(func(chId string, value *utils.SyncSet[string]) bool {
 						value.Delete(key)
 						return true
 					})
 				}
 				return true
 			})
+
+			if connMap.Len()-oldLen != 0 {
+				ctx := &ChatContext{
+					ConnMap:         connMap,
+					ChannelUsersMap: channelUsersMap,
+				}
+				ctx.BroadcastEvent(&protocol.Event{
+					Type: "channel-updated",
+				})
+			}
 		}
 	}()
 
@@ -96,16 +105,10 @@ func Init() {
 	v1Auth.Use(SignCheckMiddleware)
 	v1Auth.Post("/user/change_password", UserChangePassword)
 	v1Auth.Get("/user/info", UserInfo)
+	v1Auth.Post("/upload", Upload)
+	v1Auth.Static("/attachments", "./assets/upload")
 
 	app.Get("/ws/seal", websocket.New(func(c *websocket.Conn) {
-		// c.Locals is added to the *websocket.Conn
-		sessionId := c.Cookies("session")
-
-		if sessionId == "" {
-			sessionId = gonanoid.Must()
-			//c.WriteMessage(websocket.BinaryMessage, []byte(sessionId))
-		}
-
 		// websocket.Conn bindings https://pkg.go.dev/github.com/fasthttp/websocket?tab=doc#pkg-index
 		var (
 			mt      int
@@ -161,13 +164,9 @@ func Init() {
 					}))
 					solved = true
 				case protocol.OpPing:
-					connMap.Range(func(key string, value *ConnInfo) bool {
-						if value.Conn == c {
-							value.LastPingTime = time.Now().Unix()
-							return false
-						}
-						return true
-					})
+					if info, ok := connMap.Load(curUser.ID); ok {
+						info.LastPingTime = time.Now().Unix()
+					}
 
 					utils.Must0(c.WriteJSON(protocol.GatewayPayloadStructure{
 						Op: protocol.OpPong,

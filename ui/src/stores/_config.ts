@@ -2,6 +2,7 @@ import axiosFactory, { Axios } from "axios"
 const axios = axiosFactory.create()
 
 export const urlBase = '//' + window.location.hostname + ":" + 3212;
+export const fileSizeLimit = 2 * 1024 * 1024
 
 export const api = axiosFactory.create({
   // basePath: 'http://127.0.0.1:4005',

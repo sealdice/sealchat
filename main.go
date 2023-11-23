@@ -1,10 +1,13 @@
 package main
 
 import (
-	"github.com/jessevdk/go-flags"
+	"fmt"
 	"os"
 	"sealchat/api"
 	"sealchat/model"
+
+	"github.com/jessevdk/go-flags"
+	"github.com/spf13/afero"
 )
 
 func main() {
@@ -26,6 +29,9 @@ func main() {
 		serviceInstall(false)
 		return
 	}
+
+	var AppFs = afero.NewMemMapFs()
+	fmt.Println("111", AppFs)
 
 	model.DBInit()
 	api.Init()
