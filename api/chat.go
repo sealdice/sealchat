@@ -133,6 +133,8 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 	rows := db.Create(&m).RowsAffected
 
 	if rows > 0 {
+		ctx.TagCheck(data.Data.ChannelID, m.ID, content)
+
 		userData := ctx.User.ToProtocolType()
 		channelData := &protocol.Channel{ID: data.Data.ChannelID}
 
@@ -202,7 +204,7 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 
 	sql.Order("created_at desc").
 		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id, nickname")
+			return db.Select("id, nickname, avatar")
 		}).
 		Preload("Member", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, nickname, channel_id")
@@ -234,4 +236,55 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 	//	ErrStatus: http.StatusInternalServerError,
 	//	Echo:      echo,
 	//}))
+}
+
+func apiGuildMemberList(ctx *ChatContext, msg []byte) {
+	c := ctx.Conn
+	db := model.GetDB()
+	data := struct {
+		Data struct {
+			GuildId string `json:"guild_id"`
+			Next    string `json:"next"`
+		} `json:"data"`
+	}{}
+	err := json.Unmarshal(msg, &data)
+	if err != nil {
+		return
+	}
+
+	var items []*model.UserModel
+
+	sql := db.Select("nickname, is_bot, avatar, id")
+
+	var count int64
+	if data.Data.Next != "" {
+		t, err := strconv.ParseInt(data.Data.Next, 36, 64)
+		if err != nil {
+			return
+		}
+
+		sql = sql.Where("created_at < ?", time.UnixMilli(t))
+	}
+
+	sql.Order("created_at desc").Find(&items)
+
+	sql.Count(&count)
+	var next string
+
+	items = lo.Reverse(items)
+	if count > int64(len(items)) && len(items) > 0 {
+		next = strconv.FormatInt(items[0].CreatedAt.UnixMilli(), 36)
+	}
+
+	ret := struct {
+		Data []*model.UserModel `json:"data"`
+		Next string             `json:"next"`
+		Echo string             `json:"echo"`
+	}{
+		Data: items,
+		Next: next,
+		Echo: ctx.Echo,
+	}
+
+	utils.Must0(c.WriteJSON(ret))
 }

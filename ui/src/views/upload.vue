@@ -17,7 +17,7 @@ const files = ref<any[]>([])
 
 const uploadRef = ref<any>(null)
 const dragAreaRef = ref<any>(null);
-const putAction = urlBase + '/api/v1/upload'
+const postAction = urlBase + '/api/v1/upload'
 
 const headers = computed(() => {
   return {
@@ -130,7 +130,7 @@ defineExpose({
 
 <template>
   <div class=" absolute">
-    <file-upload ref="uploadRef" v-model="files" :post-action="putAction" @input-file="inputFile"
+    <file-upload ref="uploadRef" v-model="files" :post-action="postAction" @input-file="inputFile"
       @input-filter="inputFilter" :headers="headers" :size="fileSizeLimit" :drop="true" :drop-directory="false">
     </file-upload>
   </div>

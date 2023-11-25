@@ -33,6 +33,9 @@ type BytePKBaseModel2 struct {
 func DBInit() {
 	var err error
 	db, err = gorm.Open(sqlite.Open("chat.db"), &gorm.Config{})
+	// db.Exec("PRAGMA foreign_keys = ON") // 外键约束，不需要
+	db.Exec("PRAGMA journal_mode=WAL")
+
 	if err != nil {
 		panic("连接数据库失败")
 	}
@@ -42,6 +45,10 @@ func DBInit() {
 	db.AutoMigrate(&UserModel{})
 	db.AutoMigrate(&AccessTokenModel{})
 	db.AutoMigrate(&MemberModel{})
+	db.AutoMigrate(&Attachment{})
+	db.AutoMigrate(&MentionModel{})
+	db.AutoMigrate(&TimelineModel{})
+	db.AutoMigrate(&TimelineUserLastRecordModel{})
 
 	// 初始化默认频道
 	var channelCount int64

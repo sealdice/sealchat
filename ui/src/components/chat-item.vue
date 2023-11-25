@@ -5,7 +5,9 @@ import Element from '@satorijs/element'
 import { onMounted, ref } from 'vue';
 import { urlBase } from '@/stores/_config';
 import DOMPurify from 'dompurify';
+import { useUserStore } from '@/stores/user';
 
+const user = useUserStore();
 
 function timeFormat(time?: string) {
   if (!time) return '未知';
@@ -27,8 +29,14 @@ const parseContent = (props: any) => {
         }
         textItems.push(DOMPurify.sanitize(item.toString()));
         break;
+      case "at":
+        if (item.attrs.id == user.info.id) {
+          textItems.push(`<span class="text-blue-500 bg-gray-400 px-1" style="white-space: pre-wrap">@${ item.attrs.name }</span>`);
+        } else {
+          textItems.push(`<span class="text-blue-500" style="white-space: pre-wrap">@${ item.attrs.name }</span>`);
+        }
       default:
-        textItems.push(`<span style="white-space: pre-wrap">${ item.toString() }</span>`);
+        textItems.push(`<span style="white-space: pre-wrap">${item.toString()}</span>`);
         break;
     }
   }
@@ -57,7 +65,8 @@ onMounted(() => {
 <template>
   <div :id="item?.id" class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}"
     :class="props.isRtl ? ['is-rtl'] : []" :key="key">
-    <img class="rounded-md w-12 h-12 border-gray-500 border" :src="props.avatar" />
+    <avatar :src="props.avatar" />
+    <!-- <img class="rounded-md w-12 h-12 border-gray-500 border" :src="props.avatar" /> -->
     <!-- <n-avatar :src="imgAvatar" size="large" bordered>海豹</n-avatar> -->
     <div class="right">
       <span class="title">

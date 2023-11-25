@@ -8,6 +8,8 @@ export interface UserInfo {
   deletedAt: null | string;
   username: string;
   nick: string;
+  avatar: string;
+  brief: string;
 }
 
 export interface TalkMessage {

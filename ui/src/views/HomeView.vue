@@ -8,13 +8,15 @@ import { chatEvent, useChatStore } from '@/stores/chat';
 import type { Event, Message } from '@satorijs/protocol'
 import { useUserStore } from '@/stores/user';
 import { ArrowBarToDown, Plus, Upload } from '@vicons/tabler'
-import { NIcon, c, useDialog, useMessage } from 'naive-ui';
+import { NIcon, c, useDialog, useMessage, type MentionOption } from 'naive-ui';
 import VueScrollTo from 'vue-scrollto'
 import UploadSupport from './upload.vue'
 import { liveQuery } from "dexie";
 import { useObservable } from "@vueuse/rxjs";
 import { db, getSrc, type Thumb } from '@/models';
 import { throttle } from 'lodash-es';
+import ChatHeader from './header.vue'
+import AvatarVue from '@/components/avatar.vue';
 
 const uploadImages = useObservable<Thumb[]>(
   liveQuery(() => db.thumbs.toArray()) as any
@@ -30,13 +32,35 @@ const textInputRef = ref<any>(null);
 
 const rows = ref<Message[]>([]);
 
+async function replaceUsernames(text: string) {
+  const resp = await chat.guildMemberList('');
+  const infoMap = (resp.data as any[]).reduce((obj, item) => {
+    obj[item.nick] = item;
+    return obj;
+  }, {})
+
+  // 匹配 @ 后跟着字母数字下划线的用户名
+  const regex = /@(\S+)/g;
+
+  // 使用 replace 方法来替换匹配到的用户名
+  const replacedText = text.replace(regex, (match, username) => {
+    if (username in infoMap) {
+      const info = infoMap[username];
+      return `<at id="${info.id}" name="${info.nick}" />`
+    }
+    return match;
+  });
+
+  return replacedText;
+}
+
 const textToSend = ref('');
-const send = () => {
+const send = async () => {
   if (chat.connectState !== 'connected') {
     message.error('尚未连接，请稍等');
     return;
   }
-  const t = textToSend.value;
+  let t = textToSend.value;
   if (t.trim() === '') {
     message.error('不能发送空消息');
     return;
@@ -45,6 +69,7 @@ const send = () => {
     message.error('消息过长，请分段发送');
     return;
   }
+  t = await replaceUsernames(t)
   chat.messageCreate(t);
 
   textToSend.value = '';
@@ -79,8 +104,15 @@ const scrollToBottom = () => {
 
 onMounted(async () => {
   await chat.tryInit();
+  const elInput = textInputRef.value;
+  if (elInput) {
+    // 注: n-mention 不支持这个事件监听，所以这里手动监听
+    elInput.$el.getElementsByTagName('textarea')[0].onkeydown = keyDown;
+  }
+
   chatEvent.off('message-created', '*');
   chatEvent.on('message-created', (e?: Event) => {
+    console.log('???', e)
     if (e && e.message && e.channel?.id == chat.curChannel?.id) {
       rows.value.push(e.message);
       if (!showButton.value) {
@@ -93,8 +125,16 @@ onMounted(async () => {
   chatEvent.on('channel-deleted', (e) => {
     if (!e) {
       // 当前频道没了，直接进行重载
-      channelSelect(chat.channelTree[0].id);
+      chat.channelSwitchTo(chat.channelTree[0].id);
     }
+  })
+
+  chatEvent.on('channel-switch-to', (e) => {
+    rows.value = []
+    showButton.value = false;
+    // 具体不知道原因，但是必须在这个位置reset才行
+    // virtualListRef.value?.reset();
+    loadMessages();
   })
 
   loadMessages();
@@ -124,17 +164,6 @@ const loadMessages = async () => {
   })
 }
 
-const showModal = ref(false);
-const newChannelName = ref('');
-const newChannel = async () => {
-  if (!newChannelName.value.trim()) {
-    message.error('频道名不能为空');
-    return;
-  }
-  await chat.channelCreate(newChannelName.value);
-  await chat.channelList();
-}
-
 const showButton = ref(false)
 const onScroll = (evt: any) => {
   // 会打断输入，不要blur
@@ -155,7 +184,9 @@ const onScroll = (evt: any) => {
   // showButton.value = vl.clientRef.itemRefEl.clientHeight - vl.getOffset() > vl.clientRef.itemRefEl.clientHeight / 2
 }
 
-const keyUp = function (e: KeyboardEvent) {
+const pauseKeydown = ref(false);
+const keyDown = function (e: KeyboardEvent) {
+  if (pauseKeydown.value) return;
   if (e.key === 'Enter' && (!e.ctrlKey) && (!e.shiftKey)) {
     send();
     e.preventDefault();
@@ -164,6 +195,29 @@ const keyUp = function (e: KeyboardEvent) {
     //   (textInputRef.value as any).blur()
     // }
   }
+}
+
+const atOptions = ref<MentionOption[]>([])
+const atLoading = ref(true)
+const atRenderLabel = (option: MentionOption) => {
+  return <div class="flex items-center space-x-1">
+    <AvatarVue size={24} border={false} src={(option as any).data?.avatar} />
+    <span>{option.label}</span>
+  </div>
+}
+
+const atHandleSearch = async (pattern: string, prefix: string) => {
+  pauseKeydown.value = true;
+  atLoading.value = true;
+  const lst = (await chat.guildMemberList('')).data.map((i: any) => {
+    return {
+      value: i.nick,
+      label: i.nick,
+      data: i,
+    }
+  })
+  atOptions.value = lst;
+  atLoading.value = false;
 }
 
 let reachTopLoading = false;
@@ -196,76 +250,16 @@ const reachTop = async (evt: any) => {
   }
 }
 
-const renderIcon = (icon: Component) => {
-  return () => {
-    return h(NIcon, null, {
-      default: () => h(icon)
-    })
-  }
-}
-
-const chOptions = computed(() => {
-  const lst = chat.channelTree.map(i => {
-    return {
-      label: `${i.name} (${(i as any).membersCount})`,
-      key: i.id,
-      icon: undefined as any,
-      props: undefined as any,
-    }
-  })
-  lst.push({ label: '新建', key: 'new', icon: renderIcon(Plus), props: { style: { 'font-weight': 'bold' } } })
-  return lst;
-})
-
-const channelSelect = async (key: string) => {
-  if (key === 'new') {
-    showModal.value = true;
-    // chat.channelCreate('测试频道');
-    // message.info('暂不支持新建频道');
-  } else {
-    await chat.channelSwitchTo(key);
-    rows.value = []
-    showButton.value = false;
-    // 具体不知道原因，但是必须在这个位置reset才行
-    virtualListRef.value?.reset();
-    loadMessages();
-  }
-}
-
 const sendEmoji = throttle((i: Thumb) => {
   chat.messageCreate(`<img src="id:${i.id}" />`)
 }, 1000)
+
 </script>
 
 <template>
   <main class=" h-screen">
     <n-layout-header style="height: 4rem; padding: 24px" bordered>
-      <div class="flex justify-between items-center">
-        <div>
-          <span class="text-sm font-bold sm:text-xl">海豹尬聊</span>
-          <!-- <n-button>登录</n-button>
-      <n-button>切换房间</n-button> -->
-          <span class="ml-4">
-            <n-dropdown trigger="click" :options="chOptions" @select="channelSelect">
-              <!-- <n-button>{{ chat.curChannel?.name || '加载中 ...' }}</n-button> -->
-              <n-button text>{{ chat.curChannel?.name ? `${chat.curChannel?.name} (${(chat.curChannel as
-                any).membersCount})`
-                : '加载中 ...' }} ▼</n-button>
-            </n-dropdown>
-          </span>
-
-        </div>
-        <div class="space-x-8">
-          <!-- ● -->
-          <span v-if="chat.connectState === 'connecting'" class=" text-blue-500">连接中 ...</span>
-          <span v-if="chat.connectState === 'connected'" class=" text-green-600">已连接</span>
-          <span v-if="chat.connectState === 'disconnected'" class=" text-red-500">已断开</span>
-          <span v-if="chat.connectState === 'reconnecting'" class=" text-orange-400">{{ chat.iReconnectAfterTime }}s
-            后自动重连</span>
-          <!-- 这个其实有问题，应该是群内昵称 -->
-          <span>{{ user.info.nick }}</span>
-        </div>
-      </div>
+      <chat-header />
     </n-layout-header>
 
     <n-layout has-sider position="absolute" style="margin-top: 4rem;">
@@ -280,8 +274,8 @@ const sendEmoji = throttle((i: Thumb) => {
             <!-- <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"
               @toBottom="reachBottom" @toTop="reachTop"> -->
             <template v-for="itemData in rows" :key="itemData.id">
-              <chat-item :avatar="imgAvatar" :username="itemData.member?.nick" :content="itemData.content"
-                :is-rtl="isMe(itemData)" :item="itemData" />
+              <chat-item :avatar="itemData.member?.avatar || itemData.user?.avatar" :username="itemData.member?.nick"
+                :content="itemData.content" :is-rtl="isMe(itemData)" :item="itemData" />
             </template>
 
             <!-- <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"
@@ -305,9 +299,10 @@ const sendEmoji = throttle((i: Thumb) => {
           </div>
 
           <!-- flex-grow -->
-          <div class=" edit-area flex justify-between space-x-2 my-2 px-2">
-            <n-input type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyUp" ref="textInputRef">
-              <template #prefix>
+          <div class="edit-area flex justify-between space-x-2 my-2 px-2 relative">
+            <div class="flex justify-between relative w-full">
+              <!-- 输入框左侧按钮，因为n-mention不支持#prefix和#suffix，所以单独拿出来了 -->
+              <div class="absolute" style="z-index: 1; left: 0.5rem; top: .55rem;">
                 <n-popover trigger="click">
                   <template #trigger>
                     <n-button text>
@@ -318,14 +313,14 @@ const sendEmoji = throttle((i: Thumb) => {
                   </template>
                   <div class=" text-base">表情(仅当前设备)</div>
                   <div class="grid grid-cols-4 gap-4">
-                    <div v-for="i in uploadImages"  @click="sendEmoji(i)">
+                    <div v-for="i in uploadImages" @click="sendEmoji(i)">
                       <img :src="getSrc(i)" style="width: 4.8rem; height: 4.8rem; object-fit: contain;" />
                     </div>
                   </div>
                 </n-popover>
-              </template>
+              </div>
 
-              <template #suffix>
+              <div class="absolute" style="z-index: 1; right: 0.6rem; top: .55rem;">
                 <n-space>
                   <n-popover trigger="hover">
                     <template #trigger>
@@ -337,23 +332,21 @@ const sendEmoji = throttle((i: Thumb) => {
                     </template>
                     <span>上传图片</span>
                   </n-popover>
-
                 </n-space>
-              </template>
-            </n-input>
+              </div>
+
+              <n-mention type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyDown"
+                ref="textInputRef" class="chat-text" placeholder="请输入" :options="atOptions" :loading="atLoading"
+                @search="atHandleSearch" @select="pauseKeydown = false" :render-label="atRenderLabel">
+              </n-mention>
+            </div>
             <div class="flex" style="align-items: end; padding-bottom: 1px;">
               <n-button class="" type="primary" @click="send" :disabled="chat.connectState !== 'connected'">发送</n-button>
             </div>
           </div>
         </div>
       </n-layout>
-
     </n-layout>
-
-    <n-modal v-model:show="showModal" preset="dialog" title="添加频道" content="你确认?" positive-text="确认" negative-text="算了"
-      @positive-click="newChannel">
-      <n-input v-model:value="newChannelName"></n-input>
-    </n-modal>
 
     <upload-support ref="uploadSupportRef" />
   </main>
@@ -378,5 +371,10 @@ const sendEmoji = throttle((i: Thumb) => {
   &>div {
     margin-bottom: -1rem;
   }
+}
+
+.chat-text>.n-input>.n-input-wrapper {
+  padding-left: 2rem;
+  padding-right: 2rem;
 }
 </style>

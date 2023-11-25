@@ -42,7 +42,7 @@ func serviceInstall(isInstall bool) {
 	s, err := service.New(prg, svcConfig)
 
 	if isInstall {
-		fmt.Println("正在安装系统服务，安装完成后，SealDice将自动随系统启动")
+		fmt.Println("正在安装系统服务，安装完成后将自动随系统启动")
 		if err != nil {
 			fmt.Printf("安装失败: %s\n", err.Error())
 		}

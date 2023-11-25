@@ -9,6 +9,7 @@ import { Emitter } from '@/utils/event';
 import { useUserStore } from './user';
 import { urlBase } from './_config';
 import { useMessage } from 'naive-ui';
+import { memoizeWithTimeout } from '@/utils/tools';
 
 interface ChatState {
   subject: WebSocketSubject<any> | null;
@@ -22,7 +23,7 @@ interface ChatState {
 const apiMap = new Map<string, any>();
 let _connectResolve: any = null;
 
-type myEventName = EventName | 'message-created'; // 当前npm版本缺这个事件
+type myEventName = EventName | 'message-created' | 'channel-switch-to'; // 当前npm版本缺这个事件
 export const chatEvent = new Emitter<{
   [key in myEventName]: (msg?: Event) => void;
   // 'message-created': (msg: Event) => void;
@@ -176,6 +177,7 @@ export const useChatStore = defineStore({
       this.curChannel = this.channelTree.find(c => c.id === id) || this.curChannel;
       await this.sendAPI('channel.enter', { 'channel_id': id });
       localStorage.setItem('lastChannel', id);
+      chatEvent.emit('channel-switch-to', undefined);
       this.channelList();
     },
 
@@ -226,10 +228,21 @@ export const useChatStore = defineStore({
       return resp;
     },
 
+    async guildMemberListRaw(guildId: string, next?: string) {
+      const resp = await this.sendAPI('guild.member.list', { guild_id: guildId, next });
+      // console.log(resp)
+      return resp;
+    },
+
+    async guildMemberList(guildId: string, next?: string) {
+      return memoizeWithTimeout(this.guildMemberListRaw, 30000)(guildId, next)
+    },
+
     async messageCreate(content: string) {
       // const resp = await this.sendAPI('message.create', { channel_id: this.curChannel?.id, content });
       const resp = await this.sendAPI('qqq.x', { channel_id: this.curChannel?.id, content });
-      console.log(1111, resp)
+      // console.log(1111, resp)
+      return resp;
     },
 
     async eventDispatch(e: Event) {
@@ -237,3 +250,4 @@ export const useChatStore = defineStore({
     }
   }
 });
+

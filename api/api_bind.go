@@ -112,7 +112,12 @@ func Init(uiStatic fs.FS) {
 	v1Auth.Use(SignCheckMiddleware)
 	v1Auth.Post("/user/change_password", UserChangePassword)
 	v1Auth.Get("/user/info", UserInfo)
+	v1Auth.Put("/user/info", UserInfoUpdate)
+
+	v1Auth.Get("/timeline/list", TimelineList)
+
 	v1Auth.Post("/upload", Upload)
+	v1Auth.Get("/attachments/list", AttachmentList)
 	v1Auth.Static("/attachments", "./assets/upload")
 
 	app.Get("/ws/seal", websocket.New(func(c *websocket.Conn) {
@@ -212,6 +217,9 @@ func Init(uiStatic fs.FS) {
 						solved = true
 					case "message.list":
 						apiMessageList(ctx, msg)
+						solved = true
+					case "guild.member.list":
+						apiGuildMemberList(ctx, msg)
 						solved = true
 					}
 				}

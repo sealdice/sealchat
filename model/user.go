@@ -16,7 +16,10 @@ import (
 // UserModel 用户表
 type UserModel struct {
 	StringPKBaseModel
-	Nickname string `gorm:"null" json:"nick"`                     // 昵称
+	Nickname string `gorm:"null" json:"nick"` // 昵称
+	Avatar   string `json:"avatar"`           // 头像
+	Brief    string `json:"brief"`            // 简介
+
 	Username string `gorm:"uniqueIndex;not null" json:"username"` // 用户名，唯一，非空
 	Password string `gorm:"not null" json:"-"`                    // 密码，非空
 	Salt     string `gorm:"not null" json:"-"`                    // 盐，非空
@@ -29,10 +32,19 @@ func (*UserModel) TableName() string {
 
 func (u *UserModel) ToProtocolType() *protocol.User {
 	return &protocol.User{
-		ID:    u.ID,
-		Nick:  u.Nickname,
-		IsBot: u.IsBot,
+		ID:     u.ID,
+		Nick:   u.Nickname,
+		Avatar: u.Avatar,
+		IsBot:  u.IsBot,
 	}
+}
+
+func (u *UserModel) SaveAvatar() {
+	db.Model(u).Update("avatar", u.Avatar)
+}
+
+func (u *UserModel) SaveInfo() {
+	db.Model(u).Select("nickname", "brief").Updates(u)
 }
 
 // AccessTokenModel access_token表

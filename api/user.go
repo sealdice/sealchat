@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gofiber/fiber/v2"
 	"net/http"
+	"regexp"
 	"sealchat/model"
 	"strings"
 )
@@ -51,6 +52,7 @@ func SignCheckMiddleware(c *fiber.Ctx) error {
 	}
 
 	//}
+	model.TimelineUpdate(user.ID)
 
 	return c.Next()
 }
@@ -103,6 +105,8 @@ func UserSignup(c *fiber.Ctx) error {
 			"message": "生成token失败",
 		})
 	}
+
+	model.TimelineUpdate(user.ID)
 
 	return c.JSON(fiber.Map{
 		"message": "注册成功",
@@ -187,6 +191,55 @@ func UserChangePassword(c *fiber.Ctx) error {
 
 func UserInfo(c *fiber.Ctx) error {
 	u := getCurUser(c)
+	return c.JSON(fiber.Map{
+		"user": u,
+	})
+}
+
+func UserInfoUpdate(c *fiber.Ctx) error {
+	type RequestBody struct {
+		Nickname string `json:"nick" form:"nick"`
+		Brief    string `json:"brief" form:"brief"`
+	}
+
+	var data RequestBody
+	err := c.BodyParser(&data)
+	if err != nil {
+		return err
+	}
+	data.Nickname = strings.TrimSpace(data.Nickname)
+	if len(data.Nickname) > 20 {
+		return c.JSON(fiber.Map{
+			"message": "昵称不能超过20个字符",
+		})
+	}
+	if len(data.Nickname) < 1 {
+		return c.JSON(fiber.Map{
+			"message": "昵称不能为空",
+		})
+	}
+	if m, _ := regexp.MatchString(`\s`, data.Nickname); m {
+		c.Status(http.StatusBadRequest)
+		return c.JSON(fiber.Map{
+			"message": "昵称不能包含空格",
+		})
+	}
+
+	db := model.GetDB()
+	u2 := &model.UserModel{}
+	db.Select("id").Where("nickname = ?", data.Nickname).First(&u2)
+	if u2.ID != "" {
+		c.Status(http.StatusBadRequest)
+		return c.JSON(fiber.Map{
+			"message": "昵称已被占用",
+		})
+	}
+
+	u := getCurUser(c)
+	u.Nickname = data.Nickname
+	u.Brief = data.Brief
+	u.SaveInfo()
+
 	return c.JSON(fiber.Map{
 		"user": u,
 	})

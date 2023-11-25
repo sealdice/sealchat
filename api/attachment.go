@@ -61,10 +61,28 @@ func Upload(c *fiber.Ctx) error {
 		})
 
 		filenames = append(filenames, fn)
+
+		// 特殊值处理
+		if channelId != "user-avatar" {
+			user := getCurUser(c)
+			user.Avatar = "id:" + fn
+			user.SaveAvatar()
+		}
 	}
 
 	return c.JSON(fiber.Map{
 		"message": "上传成功",
 		"files":   filenames,
+	})
+}
+
+func AttachmentList(c *fiber.Ctx) error {
+	var items []*model.Attachment
+	user := getCurUser(c)
+	model.GetDB().Where("user_id = ?", user.ID).Select("id, created_at, hash").Find(&items)
+
+	return c.JSON(fiber.Map{
+		"message": "ok",
+		"data":    items,
 	})
 }

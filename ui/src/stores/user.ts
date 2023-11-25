@@ -29,7 +29,9 @@ export const useUserStore = defineStore({
       updatedAt: "",
       deletedAt: null,
       username: "",
-      nick: ''
+      nick: '',
+      avatar: '',
+      brief: ''
     },
   }),
 
@@ -64,6 +66,29 @@ export const useUserStore = defineStore({
       return resp
     },
 
+    async timelineList() {
+      const resp = await api.get('api/v1/timeline/list', {
+        headers: { 'Authorization': this.token }
+      })
+      return resp
+    },
+
+    // 强制更新用户信息
+    async infoUpdate() {
+      const resp = await api.get('api/v1/user/info', {
+        headers: { 'Authorization': this.token }
+      })
+      this.info = resp.data.user as UserInfo;
+      return this.info;
+    },
+
+    async changeInfo(info: { nick: string, brief: string }) {
+      const resp = await api.put('api/v1/user/info', info, {
+        headers: { 'Authorization': this.token }
+      })
+      return resp;
+    },
+
     async checkUserSession() {
       const now = Number(Date.now());
       if (now + this.lastCheckTime > 60 * 1000) {
@@ -81,7 +106,6 @@ export const useUserStore = defineStore({
           this.lastCheckTime = Number(Date.now());
           return true;
         } catch (e: any) {
-          console.log(222, e);
           if (e.code !== "ERR_NETWORK") {
             // 未登录，清除数据
             this.info.id = '';

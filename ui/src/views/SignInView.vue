@@ -43,11 +43,11 @@ const handleValidateButtonClick = async (e: MouseEvent) => {
       try {
         const resp = await userStore.signIn(model.value.account, model.value.password || '');
         const ret = resp.data;
-        message.success('验证成功，3秒后返回首页')
+        message.success('验证成功，即将返回首页')
         if (ret.token) {
-          setTimeout(() => {
-            router.replace({ name: 'home' })
-          }, 3000);
+          // setTimeout(() => {
+          router.replace({ name: 'home' })
+          // }, 3000);
         }
       } catch (err) {
         message.error('登录失败: ' + ((err as any).data?.message || '密码错误'))
