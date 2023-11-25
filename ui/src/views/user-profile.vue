@@ -57,6 +57,7 @@ const imgChanged = function (e: any) {
   if (e.target.naturalWidth < 200 || e.target.naturalHeight < 200) {
     imageInfo.value.image = ''
     imageInfo.value.tooSmall = true
+    message.error('这张图太小了，请找一张至少有200宽度或高度的图')
     return
   }
   imageInfo.value.tooSmall = false
@@ -278,6 +279,8 @@ const save = async () => {
       brief: model.value.brief,
     });
     message.success('修改成功')
+    user.info.nick = model.value.nickname
+    user.info.brief = model.value.brief
     emit('close')
   } catch (error: any) {
     let msg = error.response?.data?.message;

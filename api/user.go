@@ -225,9 +225,10 @@ func UserInfoUpdate(c *fiber.Ctx) error {
 		})
 	}
 
+	u := getCurUser(c)
 	db := model.GetDB()
 	u2 := &model.UserModel{}
-	db.Select("id").Where("nickname = ?", data.Nickname).First(&u2)
+	db.Select("id").Where("nickname = ? and id != ?", data.Nickname, u.ID).First(&u2)
 	if u2.ID != "" {
 		c.Status(http.StatusBadRequest)
 		return c.JSON(fiber.Map{
@@ -235,7 +236,6 @@ func UserInfoUpdate(c *fiber.Ctx) error {
 		})
 	}
 
-	u := getCurUser(c)
 	u.Nickname = data.Nickname
 	u.Brief = data.Brief
 	u.SaveInfo()

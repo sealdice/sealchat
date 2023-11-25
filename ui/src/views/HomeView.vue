@@ -17,6 +17,7 @@ import { db, getSrc, type Thumb } from '@/models';
 import { throttle } from 'lodash-es';
 import ChatHeader from './header.vue'
 import AvatarVue from '@/components/avatar.vue';
+import { nanoid } from 'nanoid';
 
 const uploadImages = useObservable<Thumb[]>(
   liveQuery(() => db.thumbs.toArray()) as any
@@ -209,6 +210,23 @@ const atRenderLabel = (option: MentionOption) => {
 const atHandleSearch = async (pattern: string, prefix: string) => {
   pauseKeydown.value = true;
   atLoading.value = true;
+
+  const atElementCheck = () => {
+    const els = document.getElementsByClassName("v-binder-follower-content");
+    if (els.length) {
+      return els[0].children.length > 0;
+    }
+    return false;
+  }
+
+  // 如果at框非正常消失，那么也一样要恢复回车键功能
+  let x = setInterval(() => {
+    if (!atElementCheck()) {
+      pauseKeydown.value = false;
+      clearInterval(x);
+    }
+  }, 100)
+
   const lst = (await chat.guildMemberList('')).data.map((i: any) => {
     return {
       value: i.nick,
@@ -311,7 +329,7 @@ const sendEmoji = throttle((i: Thumb) => {
                       </template>
                     </n-button>
                   </template>
-                  <div class=" text-base">表情(仅当前设备)</div>
+                  <div class="text-base">表情(仅当前设备)</div>
                   <div class="grid grid-cols-4 gap-4">
                     <div v-for="i in uploadImages" @click="sendEmoji(i)">
                       <img :src="getSrc(i)" style="width: 4.8rem; height: 4.8rem; object-fit: contain;" />
