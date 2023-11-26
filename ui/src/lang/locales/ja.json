@@ -1,0 +1,52 @@
+{
+  "headText": "SealChat",
+  "channelListNew": "新規",
+  "dialoChannelgNew": {
+    "title": "新しいチャンネル",
+    "channelNamePlaceholder": "チャンネル名を入力してください",
+    "channelNameHint": "チャンネル名は空にできません",
+    "positiveText": "確認",
+    "negativeText": "キャンセル"
+  },
+  "inputBox": {
+    "placeholder": "入力してください...",
+    "send": "送信",
+    "upload": "画像をアップロード",
+    "emojiTitle": "絵文字（現在のデバイスのみ）"
+  },
+  "connectState": {
+    "connecting": "接続中...",
+    "connected": "接続済み",
+    "disconnected": "切断されました",
+    "reconnecting": "{0}秒後に再接続します"
+  },
+  "headerMenu": {
+    "profile": "プロフィール",
+    "about": "アバウト",
+    "lang": "言語設定",
+    "langAuto": "Auto",
+    "notice": "通知",
+    "logout": "ログアウト"
+  },
+  "userProfile": {
+    "title": "プロフィール",
+    "nickname": "ニックネーム",
+    "avatar": "アバター",
+    "brief": "概要",
+    "briefPlaceholder": "自己紹介を書いてみましょう",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "avatarUpload": {
+      "preview": "プレビュー",
+      "back": "戻る",
+      "confirm": "確認",
+      "tooSmall": "この画像は小さすぎます。幅または高さが200以上の画像を選択してください。"
+    }
+  },
+  "dialogLogOut": {
+    "title": "警告",
+    "content": "ログアウトしますか？",
+    "positiveText": "確定",
+    "negativeText": "キャンセル"
+  }
+}

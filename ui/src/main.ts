@@ -2,19 +2,24 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { i18n, setLocale, setLocaleByNavigator } from './lang'
 
 import App from './App.vue'
 import router from './router'
 
 const app = createApp(App)
 
+app.use(i18n)
 app.use(createPinia())
 app.use(router)
+
+setLocaleByNavigator()
 
 import './assets/main.css'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
+import 'dayjs/locale/ja'
 
 dayjs.locale('zh-cn')
 dayjs.extend(relativeTime)

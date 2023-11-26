@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
-import { zhCN, dateZhCN } from 'naive-ui'
+import { zhCN, dateZhCN, jaJP, dateJaJP } from 'naive-ui'
 import { darkTheme } from 'naive-ui'
 import { NConfigProvider, NMessageProvider, NDialogProvider } from 'naive-ui'
 import type { GlobalTheme, GlobalThemeOverrides } from 'naive-ui'
+import { i18n } from './lang'
+import { ref, watch } from 'vue'
+import dayjs from 'dayjs'
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
@@ -16,10 +19,32 @@ const themeOverrides: GlobalThemeOverrides = {
     // textColor: '#FF0000'
   }
 }
+
+const locale = ref<any>(zhCN);
+const dateLocale = ref<any>(dateZhCN);
+
+watch(i18n.global.locale, (newVal) => {
+  dayjs.locale(newVal);
+
+  switch (newVal) {
+    case 'en':
+      locale.value = null;
+      dateLocale.value = null;
+      break;
+    case 'zh-cn':
+      locale.value = zhCN;
+      dateLocale.value = dateZhCN;
+      break;
+    case 'ja':
+      locale.value = jaJP;
+      dateLocale.value = dateJaJP;
+      break;
+  }
+})
 </script>
 
 <template>
-  <n-config-provider :locale="zhCN" :date-locale="dateZhCN" :theme-overrides="themeOverrides" style="height: 100%;">
+  <n-config-provider :locale="locale" :date-locale="dateLocale" :theme-overrides="themeOverrides" style="height: 100%;">
     <n-message-provider>
       <n-dialog-provider>
         <RouterView />

@@ -1,0 +1,52 @@
+{
+  "headText": "SealChat",
+  "channelListNew": "New Channel",
+  "dialoChannelgNew": {
+    "title": "New Channel",
+    "channelNamePlaceholder": "Enter channel name",
+    "channelNameHint": "Channel name cannot be empty",
+    "positiveText": "OK",
+    "negativeText": "Cancel"
+  },  
+  "inputBox": {
+    "placeholder": "type here...",
+    "send": "Send",
+    "upload": "upload image",
+    "emojiTitle": "Emoji (this device only)"
+  },
+  "connectState": {
+    "connecting": "Connecting...",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "reconnecting": "Reconnecting in {0}s"
+  },
+  "headerMenu": {
+    "profile": "Profile",
+    "about": "About",
+    "lang": "Language",
+    "langAuto": "Auto",
+    "notice": "Notifications",
+    "logout": "Log Out"
+  },
+  "userProfile": {
+    "title": "Profile",
+    "nickname": "Nick",
+    "avatar": "Avatar",
+    "brief": "Intro",
+    "briefPlaceholder": "Say something about yourself",
+    "save": "Save",
+    "cancel": "Cancel",
+    "avatarUpload": {
+      "preview": "Preview",
+      "back": "Back",
+      "confirm": "Confirm",
+      "tooSmall": "This image is too small. Please select an image with at least 200 width or height."
+    }
+  },
+  "dialogLogOut": {
+    "title": "Warning",
+    "content": "Are you sure you want to log out?",
+    "positiveText": "Confirm",
+    "negativeText": "Cancel"
+  }
+}

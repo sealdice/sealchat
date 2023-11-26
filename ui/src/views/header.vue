@@ -7,29 +7,96 @@ import { NIcon, useDialog, useMessage } from 'naive-ui';
 import { computed, ref, type Component, h } from 'vue';
 import Notif from './notif.vue'
 import UserProfile from './user-profile.vue'
+import { useI18n } from 'vue-i18n'
+import { setLocale, setLocaleByNavigator } from '@/lang';
+
+const { t } = useI18n()
 
 const notifShow = ref(false)
 const userProfileShow = ref(false)
 const chat = useChatStore();
 const user = useUserStore();
 
-const options = [
+const options = computed(() => [
   {
-    label: '个人信息',
+    label: t('headerMenu.profile'),
     key: 'profile',
     // icon: renderIcon(UserIcon)
   },
   {
-    label: '消息提醒',
+    label: t('headerMenu.lang'),
+    key: 'lang',
+    children: [
+      {
+        label: t('headerMenu.langAuto'),
+        key: 'lang:auto'
+      },
+      {
+        label: '简体中文',
+        key: 'lang:zh-cn'
+      },
+      {
+        label: 'English',
+        key: 'lang:en'
+      },
+      {
+        label: '日本語',
+        key: 'lang:ja'
+      }
+    ]
+    // icon: renderIcon(UserIcon)
+  },
+  {
+    label: t('headerMenu.notice'),
     key: 'notice',
     // icon: renderIcon(UserIcon)
   },
   {
-    label: '退出账号',
+    label: t('headerMenu.logout'),
     key: 'logout',
     // icon: renderIcon(LogoutIcon)
   }
-]
+])
+
+
+const handleSelect = async (key: string | number) => {
+  switch (key) {
+    case 'notice':
+      notifShow.value = !notifShow.value;
+      break;
+
+    case 'profile':
+      userProfileShow.value = !userProfileShow.value;
+      break;
+
+    case 'logout':
+      dialog.warning({
+        title: t('dialogLogOut.title'),
+        content: t('dialogLogOut.content'),
+        positiveText: t('dialogLogOut.positiveText'),
+        negativeText: t('dialogLogOut.negativeText'),
+        onPositiveClick: () => {
+          user.logout();
+          chat.subject?.unsubscribe();
+          window.location.reload();
+          // router.push({ name: 'user-signin' });
+        },
+        onNegativeClick: () => {
+        }
+      })
+      break;
+
+    default:
+      if (typeof key == "string" && key.startsWith('lang:')) {
+        if (key == 'lang:auto') {
+          setLocaleByNavigator();
+        } else {
+          setLocale(key.replace('lang:', ''));
+        }
+      }
+      break;
+  }
+}
 
 const renderIcon = (icon: Component) => {
   return () => {
@@ -48,7 +115,7 @@ const chOptions = computed(() => {
       props: undefined as any,
     }
   })
-  lst.push({ label: '新建', key: 'new', icon: renderIcon(Plus), props: { style: { 'font-weight': 'bold' } } })
+  lst.push({ label: t('channelListNew'), key: 'new', icon: renderIcon(Plus), props: { style: { 'font-weight': 'bold' } } })
   return lst;
 })
 
@@ -70,51 +137,18 @@ const showModal = ref(false);
 const newChannelName = ref('');
 const newChannel = async () => {
   if (!newChannelName.value.trim()) {
-    message.error('频道名不能为空');
+    message.error(t('dialoChannelgNew.channelNameHint'));
     return;
   }
   await chat.channelCreate(newChannelName.value);
   await chat.channelList();
-}
-
-const handleSelect = async (key: string | number) => {
-  console.log('!!!', key)
-  switch (key) {
-    case 'notice':
-      notifShow.value = !notifShow.value;
-      break;
-
-    case 'profile':
-      userProfileShow.value = !userProfileShow.value;
-      break;
-
-    case 'logout':
-      dialog.warning({
-        title: '警告',
-        content: '退出登录？',
-        positiveText: '是的',
-        negativeText: '取消',
-        onPositiveClick: () => {
-          user.logout();
-          chat.subject?.unsubscribe();
-          window.location.reload();
-          // router.push({ name: 'user-signin' });
-        },
-        onNegativeClick: () => {
-        }
-      })
-      break;
-
-    default:
-      break;
-  }
 }
 </script>
 
 <template>
   <div class="flex justify-between items-center">
     <div>
-      <span class="text-sm font-bold sm:text-xl">海豹尬聊</span>
+      <span class="text-sm font-bold sm:text-xl">{{ $t('headText') }}</span>
       <!-- <n-button>登录</n-button>
       <n-button>切换房间</n-button> -->
       <span class="ml-4">
@@ -129,11 +163,11 @@ const handleSelect = async (key: string | number) => {
     </div>
     <div class="space-x-8 flex items-center">
       <!-- ● -->
-      <span v-if="chat.connectState === 'connecting'" class=" text-blue-500">连接中 ...</span>
-      <span v-if="chat.connectState === 'connected'" class=" text-green-600">已连接</span>
-      <span v-if="chat.connectState === 'disconnected'" class=" text-red-500">已断开</span>
-      <span v-if="chat.connectState === 'reconnecting'" class=" text-orange-400">{{ chat.iReconnectAfterTime }}s
-        后自动重连</span>
+      <span v-if="chat.connectState === 'connecting'" class=" text-blue-500">{{ $t('connectState.connecting') }}</span>
+      <span v-if="chat.connectState === 'connected'" class=" text-green-600">{{ $t('connectState.connected') }}</span>
+      <span v-if="chat.connectState === 'disconnected'" class=" text-red-500">{{ $t('connectState.disconnected') }}</span>
+      <span v-if="chat.connectState === 'reconnecting'" class=" text-orange-400">{{ $t('connectState.reconnecting',
+        [chat.iReconnectAfterTime]) }}</span>
 
       <n-dropdown :overlap="usernameOverlap" placement="bottom-end" trigger="click" :options="options"
         @select="handleSelect">
@@ -151,7 +185,7 @@ const handleSelect = async (key: string | number) => {
     </div>
   </div>
 
-  <n-modal v-model:show="showModal" preset="dialog" title="添加频道" content="你确认?" positive-text="确认" negative-text="算了"
+  <n-modal v-model:show="showModal" preset="dialog" :title="$t('dialoChannelgNew.title')" :positive-text="$t('dialoChannelgNew.positiveText')" :negative-text="$t('dialoChannelgNew.negativeText')"
     @positive-click="newChannel">
     <n-input v-model:value="newChannelName"></n-input>
   </n-modal>

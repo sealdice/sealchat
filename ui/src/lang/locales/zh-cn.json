@@ -1,0 +1,52 @@
+{
+  "headText": "海豹尬聊",
+  "channelListNew": "新建",
+  "dialoChannelgNew": {
+    "title": "新建频道",
+    "channelNamePlaceholder": "请输入频道名称",
+    "channelNameHint": "频道名称不能为空",
+    "positiveText": "确定",
+    "negativeText": "取消"
+  },
+  "inputBox": {
+    "placeholder": "请输入...",
+    "send": "发送",
+    "upload": "上传图片",
+    "emojiTitle": "表情(仅当前设备)"
+  },
+  "connectState": {
+    "connecting": "连接中 ...",
+    "connected": "已连接",
+    "disconnected": "已断开",
+    "reconnecting": "{0}s 后自动重连"
+  },
+  "headerMenu": {
+    "profile": "个人信息",
+    "about": "关于",
+    "lang": "界面语言",
+    "langAuto": "自动",
+    "notice": "消息提醒",
+    "logout": "退出登录"
+  },
+  "userProfile": {
+    "title": "个人信息",
+    "nickname": "昵称",
+    "avatar": "头像",
+    "brief": "简介",
+    "briefPlaceholder": "说点什么，关于自己",
+    "save": "保存",
+    "cancel": "取消",
+    "avatarUpload": {
+      "preview": "预览",
+      "back": "返回",
+      "confirm": "确定",
+      "tooSmall": "这张图太小了，请找一张至少有200宽度或高度的图"
+    }
+  },
+  "dialogLogOut": {
+    "title": "警告",
+    "content": "确定要退出登录吗？",
+    "positiveText": "确定",
+    "negativeText": "取消"
+  }
+}

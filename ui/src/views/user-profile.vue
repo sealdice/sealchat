@@ -8,6 +8,9 @@ import { dataURItoBlob } from '@/utils/tools';
 import { api } from '@/stores/_config';
 import { useMessage } from 'naive-ui';
 import { AxiosError } from 'axios';
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const user = useUserStore();
 const message = useMessage()
@@ -57,7 +60,7 @@ const imgChanged = function (e: any) {
   if (e.target.naturalWidth < 200 || e.target.naturalHeight < 200) {
     imageInfo.value.image = ''
     imageInfo.value.tooSmall = true
-    message.error('这张图太小了，请找一张至少有200宽度或高度的图')
+    message.error(t('userProfile.avatarUpload.tooSmall'))
     return
   }
   imageInfo.value.tooSmall = false
@@ -295,14 +298,14 @@ const save = async () => {
 
 <template>
   <div class="pointer-events-auto relative border px-4 py-2 rounded-md" style="min-width: 20rem;">
-    <div class=" text-lg text-center mb-8">个人信息</div>
+    <div class=" text-lg text-center mb-8">{{ $t('userProfile.title') }}</div>
     <n-form ref="formRef" :model="model" label-placement="left" label-width="64px" require-mark-placement="right-hanging"
       :style="{
       }">
-      <n-form-item label="昵称" path="inputValue">
+      <n-form-item :label="$t('userProfile.nickname')" path="inputValue">
         <n-input v-model:value="model.nickname" placeholder="你的名字" />
       </n-form-item>
-      <n-form-item label="头像" path="inputValue">
+      <n-form-item :label="$t('userProfile.avatar')" path="inputValue">
         <input type="file" ref="inputFileRef" @change="onFileChange" accept="image/*" class="input-file" />
         <Avatar v-if="!imageInfo.image" :src="user.info.avatar" @click="selectFile"></Avatar>
         <div class="box" v-else>
@@ -329,29 +332,29 @@ const save = async () => {
             <div class="right">
               <div class="preview-item rect" style="margin-left: 10px;">
                 <img :src="imageResult" />
-                <span class="text">预览</span>
+                <span class="text">{{ $t('userProfile.avatarUpload.preview') }}</span>
               </div>
             </div>
           </div>
           <canvas style="display: none" :width="imageInfo.imgBox.h" :height="imageInfo.imgBox.h" ref="canvasRef" />
           <div class="space-x-2 mt-4">
-            <n-button small @click="backToStep1">返回</n-button>
-            <n-button small @click="saveAvatarImage">确定</n-button>
+            <n-button small @click="backToStep1">{{ $t('userProfile.avatarUpload.back') }}</n-button>
+            <n-button small @click="saveAvatarImage">{{ $t('userProfile.avatarUpload.confirm') }}</n-button>
           </div>
         </div>
 
         <!-- <n-input v-model:value="model.inputValue" placeholder="头像" /> -->
       </n-form-item>
-      <n-form-item label="简介" path="textareaValue">
-        <n-input v-model:value="model.brief" placeholder="说点什么，关于自己" type="textarea" :autosize="{
+      <n-form-item :label="$t('userProfile.brief')" path="textareaValue">
+        <n-input v-model:value="model.brief" :placeholder="$t('userProfile.briefPlaceholder')" type="textarea" :autosize="{
           minRows: 3,
           maxRows: 5
         }" />
       </n-form-item>
     </n-form>
     <div class="flex justify-end mb-4 space-x-4">
-      <n-button @click="emit('close')">取消</n-button>
-      <n-button @click="save" type="primary">保存</n-button>
+      <n-button @click="emit('close')">{{ $t('userProfile.cancel') }}</n-button>
+      <n-button @click="save" type="primary">{{ $t('userProfile.save') }}</n-button>
     </div>
   </div>
 </template>

@@ -17,7 +17,8 @@ import { db, getSrc, type Thumb } from '@/models';
 import { throttle } from 'lodash-es';
 import ChatHeader from './header.vue'
 import AvatarVue from '@/components/avatar.vue';
-import { nanoid } from 'nanoid';
+import { Howl, Howler } from 'howler';
+import SoundMessageCreated from '@/assets/message.mp3';
 
 const uploadImages = useObservable<Thumb[]>(
   liveQuery(() => db.thumbs.toArray()) as any
@@ -111,10 +112,19 @@ onMounted(async () => {
     elInput.$el.getElementsByTagName('textarea')[0].onkeydown = keyDown;
   }
 
+  var sound = new Howl({
+    src: [SoundMessageCreated],
+    html5: true
+  });
+
   chatEvent.off('message-created', '*');
   chatEvent.on('message-created', (e?: Event) => {
     console.log('???', e)
     if (e && e.message && e.channel?.id == chat.curChannel?.id) {
+      if (e.message.user?.id !== user.info.id) {
+        // 不是自己发的消息，播放声音
+        sound.play();
+      }
       rows.value.push(e.message);
       if (!showButton.value) {
         scrollToBottom();
@@ -329,7 +339,7 @@ const sendEmoji = throttle((i: Thumb) => {
                       </template>
                     </n-button>
                   </template>
-                  <div class="text-base">表情(仅当前设备)</div>
+                  <div class="text-base">{{ $t('inputBox.emojiTitle') }}</div>
                   <div class="grid grid-cols-4 gap-4">
                     <div v-for="i in uploadImages" @click="sendEmoji(i)">
                       <img :src="getSrc(i)" style="width: 4.8rem; height: 4.8rem; object-fit: contain;" />
@@ -354,12 +364,12 @@ const sendEmoji = throttle((i: Thumb) => {
               </div>
 
               <n-mention type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyDown"
-                ref="textInputRef" class="chat-text" placeholder="请输入" :options="atOptions" :loading="atLoading"
+                ref="textInputRef" class="chat-text" :placeholder="$t('inputBox.placeholder')" :options="atOptions" :loading="atLoading"
                 @search="atHandleSearch" @select="pauseKeydown = false" :render-label="atRenderLabel">
               </n-mention>
             </div>
             <div class="flex" style="align-items: end; padding-bottom: 1px;">
-              <n-button class="" type="primary" @click="send" :disabled="chat.connectState !== 'connected'">发送</n-button>
+              <n-button class="" type="primary" @click="send" :disabled="chat.connectState !== 'connected'">{{ $t('inputBox.send') }}</n-button>
             </div>
           </div>
         </div>
