@@ -39,7 +39,7 @@ func Init(uiStatic fs.FS) {
 	config := cors.New(cors.Config{
 		AllowOrigins:     "*",
 		AllowMethods:     "GET, POST, PUT, DELETE",
-		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, channel_id",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, ChannelId",
 		ExposeHeaders:    "Content-Length",
 		AllowCredentials: false,
 		MaxAge:           3600,
@@ -154,12 +154,12 @@ func Init(uiStatic fs.FS) {
 									if err == nil {
 										connMap.Store(user.ID, &ConnInfo{Conn: c, LastPingTime: time.Now().Unix()})
 										curUser = user
-										utils.Must0(c.WriteJSON(protocol.GatewayPayloadStructure{
+										_ = c.WriteJSON(protocol.GatewayPayloadStructure{
 											Op: protocol.OpReady,
 											Body: map[string]interface{}{
 												"user": curUser,
 											},
-										}))
+										})
 										solved = true
 										break
 									}
@@ -168,21 +168,21 @@ func Init(uiStatic fs.FS) {
 						}
 					}
 
-					utils.Must0(c.WriteJSON(protocol.GatewayPayloadStructure{
+					_ = c.WriteJSON(protocol.GatewayPayloadStructure{
 						Op: protocol.OpReady,
 						Body: map[string]interface{}{
 							"errorMsg": "no auth",
 						},
-					}))
+					})
 					solved = true
 				case protocol.OpPing:
 					if info, ok := connMap.Load(curUser.ID); ok {
 						info.LastPingTime = time.Now().Unix()
 					}
 
-					utils.Must0(c.WriteJSON(protocol.GatewayPayloadStructure{
+					_ = c.WriteJSON(protocol.GatewayPayloadStructure{
 						Op: protocol.OpPong,
-					}))
+					})
 					solved = true
 				}
 			}

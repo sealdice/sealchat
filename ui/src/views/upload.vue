@@ -21,7 +21,7 @@ const postAction = urlBase + '/api/v1/upload'
 
 const headers = computed(() => {
   return {
-    'channel_id': `${chat.curChannel?.id}`,
+    ChannelId: `${chat.curChannel?.id}`,
     Authorization: `${user.token}`
   }
 })

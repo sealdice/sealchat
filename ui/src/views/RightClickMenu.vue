@@ -27,7 +27,7 @@ const addToMyEmoji = async () => {
           mimeType: '',
           data: null, // 无数据，按id加载
         });
-        message.error('收藏成功');
+        message.success('收藏成功');
       } catch (e: any) {
         if (e.name === "ConstraintError") {
           message.error('该表情已经存在于收藏了');

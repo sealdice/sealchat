@@ -406,7 +406,7 @@ const sendEmoji = throttle((i: Thumb) => {
               <n-mention type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyDown"
                 ref="textInputRef" class="chat-text" :placeholder="$t('inputBox.placeholder')" :options="atOptions"
                 :loading="atLoading" @search="atHandleSearch" @select="pauseKeydown = false" placement="top-start"
-                :prefix="['@', '/', '.', '。']" :render-label="atRenderLabel">
+                :prefix="['@', '/', '.']" :render-label="atRenderLabel">
               </n-mention>
             </div>
             <div class="flex" style="align-items: end; padding-bottom: 1px;">

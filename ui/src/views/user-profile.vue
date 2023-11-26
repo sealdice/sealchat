@@ -128,6 +128,7 @@ const onFileChange = async (e: any) => {
 const imageResult = ref('')
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const imgRef = ref<HTMLCanvasElement | null>(null);
+const inputFileRef = ref<HTMLInputElement>()
 
 const refreshResult = function () {
   let width = imageInfo.value.imgBox.h
@@ -194,9 +195,13 @@ const imgStyle = computed(() => {
 })
 
 
-const inputFileRef = ref<HTMLInputElement>()
 
 const selectFile = async function () {
+  let input = inputFileRef.value
+  if (input) {
+    // 清除里面的文件，确保第二次选同一个文件可用
+    input.value = ''
+  }
   inputFileRef.value?.click()
 }
 
@@ -216,7 +221,7 @@ const saveAvatarImage = async () => {
       // 如果有需要设置的headers，可以在这里添加
       headers: {
         Authorization: `${user.token}`,
-        'channel_id': 'user-avatar', // 特殊值
+        ChannelId: 'user-avatar', // 特殊值
         // 'Content-Type': 'multipart/form-data',
       },
     });

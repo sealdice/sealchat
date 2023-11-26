@@ -16,7 +16,7 @@ func Upload(c *fiber.Ctx) error {
 	}
 
 	var channelId string
-	channelIds := c.GetReqHeaders()["channel_id"]
+	channelIds := c.GetReqHeaders()["Channelid"] // header中只能首字大写
 	if len(channelIds) > 0 {
 		channelId = channelIds[0]
 	}
@@ -63,7 +63,7 @@ func Upload(c *fiber.Ctx) error {
 		filenames = append(filenames, fn)
 
 		// 特殊值处理
-		if channelId != "user-avatar" {
+		if channelId == "user-avatar" {
 			user := getCurUser(c)
 			user.Avatar = "id:" + fn
 			user.SaveAvatar()
