@@ -24,10 +24,19 @@ export function setLocale(locale: string) {
   // i18n.global.setLocaleMessage(locale, LocaleZhcn)
   i18n.global.locale.value = locale as any;
   document.documentElement.lang = locale;
+  localStorage.setItem('locale', locale);
   return true;
 }
 
 export function setLocaleByNavigator() {
+  for (let lang of navigator.languages) {
+    // 找到适配语言就中止
+    if (setLocale(lang.toLowerCase())) break;
+  }
+}
+
+export function setLocaleByNavigatorWithStorage() {
+  if (setLocale(localStorage.getItem('locale') || '')) return;
   for (let lang of navigator.languages) {
     // 找到适配语言就中止
     if (setLocale(lang.toLowerCase())) break;

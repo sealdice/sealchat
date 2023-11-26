@@ -2,7 +2,7 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { i18n, setLocale, setLocaleByNavigator } from './lang'
+import { i18n, setLocale, setLocaleByNavigatorWithStorage } from './lang'
 
 import App from './App.vue'
 import router from './router'
@@ -13,7 +13,12 @@ app.use(i18n)
 app.use(createPinia())
 app.use(router)
 
-setLocaleByNavigator()
+import '@imengyu/vue3-context-menu/lib/vue3-context-menu.css'
+import ContextMenu from '@imengyu/vue3-context-menu'
+
+app.use(ContextMenu)
+
+setLocaleByNavigatorWithStorage()
 
 import './assets/main.css'
 import dayjs from 'dayjs'

@@ -267,6 +267,11 @@ watch(() => imageInfo.value.camera.top, (val) => {
 const emit = defineEmits(['close'])
 
 const save = async () => {
+  if (imageInfo.value.image) {
+    // 先保存头像（如果开着）
+    await saveAvatarImage();
+  }
+
   try {
     if (!model.value.nickname.trim()) {
       message.error('昵称不能为空')

@@ -6,8 +6,11 @@ import { onMounted, ref } from 'vue';
 import { urlBase } from '@/stores/_config';
 import DOMPurify from 'dompurify';
 import { useUserStore } from '@/stores/user';
+import { useChatStore } from '@/stores/chat';
+import type { Message } from '@satorijs/protocol';
 
 const user = useUserStore();
+const chat = useChatStore();
 
 function timeFormat(time?: string) {
   if (!time) return '未知';
@@ -15,6 +18,8 @@ function timeFormat(time?: string) {
   // return dayjs(time).format('MM-DD HH:mm:ss');
   return dayjs(time).fromNow();
 }
+
+let hasImage = ref(false);
 
 const parseContent = (props: any) => {
   const content = props.content;
@@ -28,12 +33,13 @@ const parseContent = (props: any) => {
           item.attrs.src = item.attrs.src.replace('id:', `${urlBase}/api/v1/attachments/`);
         }
         textItems.push(DOMPurify.sanitize(item.toString()));
+        hasImage.value = true;
         break;
       case "at":
         if (item.attrs.id == user.info.id) {
-          textItems.push(`<span class="text-blue-500 bg-gray-400 px-1" style="white-space: pre-wrap">@${ item.attrs.name }</span>`);
+          textItems.push(`<span class="text-blue-500 bg-gray-400 px-1" style="white-space: pre-wrap">@${item.attrs.name}</span>`);
         } else {
-          textItems.push(`<span class="text-blue-500" style="white-space: pre-wrap">@${ item.attrs.name }</span>`);
+          textItems.push(`<span class="text-blue-500" style="white-space: pre-wrap">@${item.attrs.name}</span>`);
         }
       default:
         textItems.push(`<span style="white-space: pre-wrap">${item.toString()}</span>`);
@@ -55,6 +61,18 @@ const props = defineProps({
 
 const timeText = ref(timeFormat(props.item?.createdAt));
 
+const onContextMenu = (e: MouseEvent, item: any) => {
+  e.preventDefault();
+  //Set the mouse position
+
+  chat.messageMenu.optionsComponent.x = e.x;
+  chat.messageMenu.optionsComponent.y = e.y;
+  //Show menu
+  chat.messageMenu.show = true;
+  chat.messageMenu.item = item;
+  chat.messageMenu.hasImage = hasImage.value;
+}
+
 onMounted(() => {
   setInterval(() => {
     timeText.value = timeFormat(props.item?.createdAt);
@@ -73,7 +91,7 @@ onMounted(() => {
         <span v-if="!props.isRtl" class="name">{{ props.username }}</span>
         <span class="time">{{ timeText }}</span>
       </span>
-      <div class="content break-all" v-html="parseContent(props)"></div>
+      <div class="content break-all" v-html="parseContent(props)" @contextmenu="onContextMenu($event, item)"></div>
     </div>
   </div>
 </template>

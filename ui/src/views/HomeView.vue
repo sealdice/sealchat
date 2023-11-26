@@ -19,6 +19,7 @@ import ChatHeader from './header.vue'
 import AvatarVue from '@/components/avatar.vue';
 import { Howl, Howler } from 'howler';
 import SoundMessageCreated from '@/assets/message.mp3';
+import RightClickMenu from './RightClickMenu.vue'
 
 const uploadImages = useObservable<Thumb[]>(
   liveQuery(() => db.thumbs.toArray()) as any
@@ -364,18 +365,21 @@ const sendEmoji = throttle((i: Thumb) => {
               </div>
 
               <n-mention type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyDown"
-                ref="textInputRef" class="chat-text" :placeholder="$t('inputBox.placeholder')" :options="atOptions" :loading="atLoading"
-                @search="atHandleSearch" @select="pauseKeydown = false" :render-label="atRenderLabel">
+                ref="textInputRef" class="chat-text" :placeholder="$t('inputBox.placeholder')" :options="atOptions"
+                :loading="atLoading" @search="atHandleSearch" @select="pauseKeydown = false"
+                :render-label="atRenderLabel">
               </n-mention>
             </div>
             <div class="flex" style="align-items: end; padding-bottom: 1px;">
-              <n-button class="" type="primary" @click="send" :disabled="chat.connectState !== 'connected'">{{ $t('inputBox.send') }}</n-button>
+              <n-button class="" type="primary" @click="send" :disabled="chat.connectState !== 'connected'">{{
+                $t('inputBox.send') }}</n-button>
             </div>
           </div>
         </div>
       </n-layout>
     </n-layout>
 
+    <RightClickMenu />
     <upload-support ref="uploadSupportRef" />
   </main>
 </template>

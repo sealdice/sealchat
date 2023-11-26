@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { urlBase } from '@/stores/_config';
 
 export interface Thumb {
   id?: string;
@@ -23,10 +24,14 @@ export class MySubClassedDexie extends Dexie {
 
 
 export function getSrc(i: Thumb) {
-  let URL = window.URL || window.webkitURL
-  if (URL && URL.createObjectURL) {
-    const b = new Blob([i.data as any], { type: i.mimeType })
-    return URL.createObjectURL(b)
+  if (i.data) {
+    let URL = window.URL || window.webkitURL
+    if (URL && URL.createObjectURL) {
+      const b = new Blob([i.data as any], { type: i.mimeType })
+      return URL.createObjectURL(b)
+    }
+  } else {
+      return `${urlBase}/api/v1/attachments/${i.id}`;
   }
 }
 

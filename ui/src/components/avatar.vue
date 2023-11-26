@@ -28,15 +28,14 @@ const src = computed(() => {
   if (props.src?.startsWith('id:')) {
     return props.src.replace('id:', `${urlBase}/api/v1/attachments/`);
   }
-  console.log('src', props.src)
-  // return props.src;
+  // console.log('src', props.src)
 })
 </script>
 
 <template>
   <div class="rounded-md w-12 h-12 border-gray-300 relative overflow-clip"
-    :style="{ width: `${size}px`, height: `${size}px` }" :class="border ? ['border'] : []">
+    :style="{ width: `${size}px`, height: `${size}px`, 'min-width': `${size}px`, 'min-height': `${size}px` }" :class="border ? ['border'] : []">
     <img class="w-full h-full" :src="src" :onload="onload" />
-    <img class="absolute w-full h-full" :src="imgAvatar" style="top:0" :style="{ opacity: opacity }" />
+    <!-- <img class="absolute w-full h-full" :src="imgAvatar" style="top:0" :style="{ opacity: opacity }" /> -->
   </div>
 </template>
