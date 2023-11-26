@@ -1,5 +1,10 @@
 package model
 
+import (
+	"sealchat/protocol"
+	"time"
+)
+
 type MessageModel struct {
 	StringPKBaseModel
 	Content   string `json:"content"`
@@ -14,4 +19,15 @@ type MessageModel struct {
 
 func (*MessageModel) TableName() string {
 	return "messages"
+}
+
+func (m *MessageModel) ToProtocolType2(channelData *protocol.Channel) *protocol.Message {
+	return &protocol.Message{
+		ID:      m.ID,
+		Content: m.Content,
+		Channel: channelData,
+		//User:      userData,
+		//Member:    member.ToProtocolType(),
+		CreatedAt: time.Now().UnixMilli(), // 跟js相匹配
+	}
 }

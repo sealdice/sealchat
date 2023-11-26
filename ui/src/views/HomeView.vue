@@ -212,10 +212,17 @@ const keyDown = function (e: KeyboardEvent) {
 const atOptions = ref<MentionOption[]>([])
 const atLoading = ref(true)
 const atRenderLabel = (option: MentionOption) => {
-  return <div class="flex items-center space-x-1">
-    <AvatarVue size={24} border={false} src={(option as any).data?.avatar} />
-    <span>{option.label}</span>
-  </div>
+  switch (option.type) {
+    case 'cmd':
+      return <div class="flex items-center space-x-1">
+        <span>{(option as any).data.info}</span>
+      </div>
+    case 'at':
+      return <div class="flex items-center space-x-1">
+        <AvatarVue size={24} border={false} src={(option as any).data?.avatar} />
+        <span>{option.label}</span>
+      </div>
+  }
 }
 
 const atHandleSearch = async (pattern: string, prefix: string) => {
@@ -238,14 +245,46 @@ const atHandleSearch = async (pattern: string, prefix: string) => {
     }
   }, 100)
 
-  const lst = (await chat.guildMemberList('')).data.map((i: any) => {
-    return {
-      value: i.nick,
-      label: i.nick,
-      data: i,
+  const cmdCheck = () => {
+    const text = textToSend.value.trim();
+    if (text.startsWith(prefix)) {
+      return true;
     }
-  })
-  atOptions.value = lst;
+  }
+
+  switch (prefix) {
+    case '@': {
+      const lst = (await chat.guildMemberList('')).data.map((i: any) => {
+        return {
+          type: 'at',
+          value: i.nick,
+          label: i.nick,
+          data: i,
+        }
+      })
+      atOptions.value = lst;
+      break;
+    }
+    case '.': case '/':
+      // 好像暂时没法组织他弹出
+      // if (!cmdCheck()) {
+      //   atLoading.value = false;
+      //   pauseKeydown.value = false;
+      //   return;
+      // }
+      atOptions.value = [[`x`, 'x d100'],].map((i) => {
+        return {
+          type: 'cmd',
+          value: i[0],
+          label: i[0],
+          data: {
+            "info": '/x 简易骰点指令，如：/x d100 (100面骰)'
+          }
+        }
+      });
+      break;
+  }
+
   atLoading.value = false;
 }
 
@@ -303,7 +342,7 @@ const sendEmoji = throttle((i: Thumb) => {
             <!-- <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"
               @toBottom="reachBottom" @toTop="reachTop"> -->
             <template v-for="itemData in rows" :key="itemData.id">
-              <chat-item :avatar="itemData.member?.avatar || itemData.user?.avatar" :username="itemData.member?.nick"
+              <chat-item :avatar="itemData.member?.avatar || itemData.user?.avatar" :username="itemData.member?.nick || '小海豹'"
                 :content="itemData.content" :is-rtl="isMe(itemData)" :item="itemData" />
             </template>
 
@@ -366,8 +405,8 @@ const sendEmoji = throttle((i: Thumb) => {
 
               <n-mention type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyDown"
                 ref="textInputRef" class="chat-text" :placeholder="$t('inputBox.placeholder')" :options="atOptions"
-                :loading="atLoading" @search="atHandleSearch" @select="pauseKeydown = false"
-                :render-label="atRenderLabel">
+                :loading="atLoading" @search="atHandleSearch" @select="pauseKeydown = false" placement="top-start"
+                :prefix="['@', '/', '.', '。']" :render-label="atRenderLabel">
               </n-mention>
             </div>
             <div class="flex" style="align-items: end; padding-bottom: 1px;">

@@ -90,6 +90,7 @@ onMounted(() => {
       <span class="title">
         <span v-if="!props.isRtl" class="name">{{ props.username }}</span>
         <span class="time">{{ timeText }}</span>
+        <span v-if="props.item?.user?.is_bot || props.item?.user_id?.startsWith('BOT:')" class=" bg-blue-500 rounded-md px-2 text-white">bot</span>
       </span>
       <div class="content break-all" v-html="parseContent(props)" @contextmenu="onContextMenu($event, item)"></div>
     </div>

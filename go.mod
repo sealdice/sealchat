@@ -12,6 +12,7 @@ require (
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mikespook/gorbac v2.3.0+incompatible
 	github.com/samber/lo v1.38.1
+	github.com/sealdice/dicescript v0.0.0-20231102165212-053ea0992846
 	github.com/spf13/afero v1.10.0
 	golang.org/x/crypto v0.15.0
 	gorm.io/gorm v1.25.5
@@ -35,7 +36,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.50.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

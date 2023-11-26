@@ -36,6 +36,6 @@ const src = computed(() => {
   <div class="rounded-md w-12 h-12 border-gray-300 relative overflow-clip"
     :style="{ width: `${size}px`, height: `${size}px`, 'min-width': `${size}px`, 'min-height': `${size}px` }" :class="border ? ['border'] : []">
     <img class="w-full h-full" :src="src" :onload="onload" />
-    <!-- <img class="absolute w-full h-full" :src="imgAvatar" style="top:0" :style="{ opacity: opacity }" /> -->
+    <img class="absolute w-full h-full" :src="imgAvatar" style="top:0" :style="{ opacity: opacity }" />
   </div>
 </template>

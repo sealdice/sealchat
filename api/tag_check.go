@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"sealchat/model"
 	"sealchat/protocol"
@@ -35,6 +34,5 @@ func (ctx *ChatContext) TagCheck(ChannelID, msgId, text string) {
 			}
 		}
 	})
-
-	fmt.Println("xxx", root.ToString())
+	//fmt.Println("xxx", root.ToString())
 }
