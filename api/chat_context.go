@@ -9,33 +9,37 @@ import (
 )
 
 type ChatContext struct {
-	Conn            *websocket.Conn
-	User            *model.UserModel
-	Echo            string
-	ConnMap         *utils.SyncMap[string, *ConnInfo]
+	Conn     *websocket.Conn
+	User     *model.UserModel
+	Echo     string
+	ConnInfo *ConnInfo
+
 	ChannelUsersMap *utils.SyncMap[string, *utils.SyncSet[string]]
+	UserId2ConnInfo *utils.SyncMap[string, *utils.SyncMap[*websocket.Conn, *ConnInfo]]
 }
 
 func (ctx *ChatContext) BroadcastEvent(data *protocol.Event) {
 	data.Timestamp = time.Now().Unix()
-	ctx.ConnMap.Range(func(key string, value *ConnInfo) bool {
-		_ = value.Conn.WriteJSON(struct {
-			protocol.Event
-			Op protocol.Opcode `json:"op"`
-		}{
-			// 协议规定: 事件中必须含有 channel，message，user
-			Event: *data,
-			Op:    protocol.OpEvent,
+	ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*websocket.Conn, *ConnInfo]) bool {
+		value.Range(func(key *websocket.Conn, value *ConnInfo) bool {
+			_ = value.Conn.WriteJSON(struct {
+				protocol.Event
+				Op protocol.Opcode `json:"op"`
+			}{
+				// 协议规定: 事件中必须含有 channel，message，user
+				Event: *data,
+				Op:    protocol.OpEvent,
+			})
+			return true
 		})
 		return true
 	})
 }
 
 func (ctx *ChatContext) BroadcastEventInChannel(channelId string, data *protocol.Event) {
-	data.Timestamp = time.Now().Unix()
-	if lst, exists := ctx.ChannelUsersMap.Load(channelId); exists {
-		lst.Range(func(key string) bool {
-			if value, exists := ctx.ConnMap.Load(key); exists {
+	ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*websocket.Conn, *ConnInfo]) bool {
+		value.Range(func(key *websocket.Conn, value *ConnInfo) bool {
+			if value.ChannelId == channelId {
 				_ = value.Conn.WriteJSON(struct {
 					protocol.Event
 					Op protocol.Opcode `json:"op"`
@@ -47,5 +51,6 @@ func (ctx *ChatContext) BroadcastEventInChannel(channelId string, data *protocol
 			}
 			return true
 		})
-	}
+		return true
+	})
 }

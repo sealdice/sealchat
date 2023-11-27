@@ -9,7 +9,11 @@ type SyncMap[K comparable, V any] struct {
 	m sync.Map
 }
 
-func (m *SyncMap[K, V]) Delete(key K) { m.m.Delete(key) }
+func (m *SyncMap[K, V]) Delete(key K) bool {
+	_, exists := m.m.LoadAndDelete(key)
+	return exists
+}
+
 func (m *SyncMap[K, V]) Load(key K) (value V, ok bool) {
 	v, ok := m.m.Load(key)
 	if !ok {

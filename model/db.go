@@ -49,6 +49,7 @@ func DBInit() {
 	db.AutoMigrate(&MentionModel{})
 	db.AutoMigrate(&TimelineModel{})
 	db.AutoMigrate(&TimelineUserLastRecordModel{})
+	db.AutoMigrate(&UserEmojiModel{})
 
 	// 初始化默认频道
 	var channelCount int64

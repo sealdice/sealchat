@@ -79,17 +79,17 @@ func apiChannelEnter(ctx *ChatContext, msg []byte) {
 
 	channelId := data.Data.ChannelId
 
-	ctx.ChannelUsersMap.Range(func(key string, value *utils.SyncSet[string]) bool {
-		value.Delete(ctx.User.ID)
-		return true
-	})
-
-	ids, exists := ctx.ChannelUsersMap.Load(channelId)
-	if !exists {
-		ids = &utils.SyncSet[string]{}
-		ctx.ChannelUsersMap.Store(channelId, ids)
+	// 如果有旧的，移除旧的
+	if ctx.ConnInfo.ChannelId != "" {
+		if s, ok := ctx.ChannelUsersMap.Load(ctx.ConnInfo.ChannelId); ok {
+			s.Delete(ctx.User.ID)
+		}
 	}
-	ids.Add(ctx.User.ID)
+	// 然后添加新的
+	chUserSet, _ := ctx.ChannelUsersMap.LoadOrStore(channelId, &utils.SyncSet[string]{})
+	chUserSet.Add(ctx.User.ID)
+
+	ctx.ConnInfo.ChannelId = channelId
 
 	ctx.BroadcastEventInChannel(channelId, &protocol.Event{
 		Type: "channel-entered",
@@ -247,6 +247,11 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 		Data struct {
 			ChannelID string `json:"channel_id"`
 			Next      string `json:"next"`
+
+			// 以下两个字段用于查询某个时间段内的消息，可选
+			Type     string `json:"type"` // 查询类型，不填为默认，若time则用下面两个值
+			FromTime int64  `json:"from_time"`
+			ToTime   int64  `json:"to_time"`
 		} `json:"data"`
 	}{}
 	err := json.Unmarshal(msg, &data)
@@ -257,6 +262,16 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 	var items []*model.MessageModel
 
 	sql := db.Where("channel_id = ?", data.Data.ChannelID)
+
+	if data.Data.Type == "time" {
+		// 如果有这俩，附加一个条件
+		if data.Data.FromTime > 0 {
+			sql = sql.Where("created_at >= ?", time.UnixMilli(data.Data.FromTime))
+		}
+		if data.Data.ToTime > 0 {
+			sql = sql.Where("created_at <= ?", time.UnixMilli(data.Data.ToTime))
+		}
+	}
 
 	var count int64
 	if data.Data.Next != "" {
