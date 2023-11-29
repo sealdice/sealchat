@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/gofiber/contrib/websocket"
 	"sealchat/model"
 	"sealchat/protocol"
 	"sealchat/utils"
@@ -9,19 +8,19 @@ import (
 )
 
 type ChatContext struct {
-	Conn     *websocket.Conn
+	Conn     *WsSyncConn
 	User     *model.UserModel
 	Echo     string
 	ConnInfo *ConnInfo
 
 	ChannelUsersMap *utils.SyncMap[string, *utils.SyncSet[string]]
-	UserId2ConnInfo *utils.SyncMap[string, *utils.SyncMap[*websocket.Conn, *ConnInfo]]
+	UserId2ConnInfo *utils.SyncMap[string, *utils.SyncMap[*WsSyncConn, *ConnInfo]]
 }
 
 func (ctx *ChatContext) BroadcastEvent(data *protocol.Event) {
 	data.Timestamp = time.Now().Unix()
-	ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*websocket.Conn, *ConnInfo]) bool {
-		value.Range(func(key *websocket.Conn, value *ConnInfo) bool {
+	ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*WsSyncConn, *ConnInfo]) bool {
+		value.Range(func(key *WsSyncConn, value *ConnInfo) bool {
 			_ = value.Conn.WriteJSON(struct {
 				protocol.Event
 				Op protocol.Opcode `json:"op"`
@@ -37,8 +36,8 @@ func (ctx *ChatContext) BroadcastEvent(data *protocol.Event) {
 }
 
 func (ctx *ChatContext) BroadcastEventInChannel(channelId string, data *protocol.Event) {
-	ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*websocket.Conn, *ConnInfo]) bool {
-		value.Range(func(key *websocket.Conn, value *ConnInfo) bool {
+	ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*WsSyncConn, *ConnInfo]) bool {
+		value.Range(func(key *WsSyncConn, value *ConnInfo) bool {
 			if value.ChannelId == channelId {
 				_ = value.Conn.WriteJSON(struct {
 					protocol.Event

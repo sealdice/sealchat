@@ -20,6 +20,7 @@ import AvatarVue from '@/components/avatar.vue';
 import { Howl, Howler } from 'howler';
 import SoundMessageCreated from '@/assets/message.mp3';
 import RightClickMenu from './RightClickMenu.vue'
+import { nanoid } from 'nanoid';
 
 const uploadImages = useObservable<Thumb[]>(
   liveQuery(() => db.thumbs.toArray()) as any
@@ -28,7 +29,7 @@ const uploadImages = useObservable<Thumb[]>(
 const message = useMessage()
 const dialog = useDialog()
 
-const virtualListRef = ref<InstanceType<typeof VirtualList> | null>(null);
+// const virtualListRef = ref<InstanceType<typeof VirtualList> | null>(null);
 const uploadSupportRef = ref<any>(null);
 const messagesListRef = ref<HTMLElement | null>(null);
 const textInputRef = ref<any>(null);
@@ -57,8 +58,10 @@ async function replaceUsernames(text: string) {
   return replacedText;
 }
 
+const instantMessages = new Set<Message>();
+
 const textToSend = ref('');
-const send = async () => {
+const send = throttle(async () => {
   if (chat.connectState !== 'connected') {
     message.error('尚未连接，请稍等');
     return;
@@ -72,12 +75,37 @@ const send = async () => {
     message.error('消息过长，请分段发送');
     return;
   }
-  t = await replaceUsernames(t)
-  chat.messageCreate(t);
+
+  const now = Date.now();
+  const tmpMsg: Message = {
+    "id": nanoid(),
+    "createdAt": now,
+    "updatedAt": now,
+    "content": t,
+    "user": user.info,
+    "member": {
+      "nick": user.info.nick,
+    }
+  }
+  rows.value.push(tmpMsg);
+  instantMessages.add(tmpMsg);
+
+  try {
+    t = await replaceUsernames(t)
+    tmpMsg.content = t;
+    const newMsg = await chat.messageCreate(t);
+    for (let [k, v] of Object.entries(newMsg)) {
+      (tmpMsg as any)[k] = v;
+    }
+  } catch (e) {
+    message.error('消息发送失败');
+    console.error('消息发送失败', e);
+    (tmpMsg as any).failed = true;
+  }
 
   textToSend.value = '';
   scrollToBottom();
-}
+}, 500)
 
 const toBottom = () => {
   scrollToBottom();
@@ -105,6 +133,7 @@ const scrollToBottom = () => {
   });
 }
 
+let firstLoad = false;
 onMounted(async () => {
   await chat.tryInit();
   const elInput = textInputRef.value;
@@ -120,13 +149,26 @@ onMounted(async () => {
 
   chatEvent.off('message-created', '*');
   chatEvent.on('message-created', (e?: Event) => {
-    console.log('???', e)
     if (e && e.message && e.channel?.id == chat.curChannel?.id) {
       if (e.message.user?.id !== user.info.id) {
         // 不是自己发的消息，播放声音
         sound.play();
+        rows.value.push(e.message);
+      } else {
+        // 自己发的消息，校准一下instantMessages
+        let postByCurrentClient = false;
+        for (let i of instantMessages) {
+          if (i.id === e.message.id) {
+            postByCurrentClient = true;
+            instantMessages.delete(i);
+            break;
+          }
+        }
+        // 这里可能遇到多端登录情况
+        if (!postByCurrentClient) {
+          rows.value.push(e.message);
+        }
       }
-      rows.value.push(e.message);
       if (!showButton.value) {
         scrollToBottom();
       }
@@ -141,6 +183,26 @@ onMounted(async () => {
     }
   })
 
+  chatEvent.on('connected', async (e) => {
+    // 重连了之后，重新加载这之间的数据
+    if (rows.value.length > 0) {
+      let now = Date.now();
+      const lastCreatedAt = rows.value[rows.value.length - 1].createdAt || now;
+
+      // 获取断线期间消息
+      const messages = await chat.messageListDuring(chat.curChannel?.id || '', lastCreatedAt, now)
+      if (messages.next) {
+        //  如果大于30个，那么基本上清除历史
+        messagesNextFlag.value = messages.next || "";
+        rows.value = rows.value.filter((i) => i.createdAt || now > lastCreatedAt);
+      }
+      // 插入新数据
+      rows.value.push(...messages.data);
+      // 为防止混乱，重新排序
+      rows.value.sort((a, b) => (a.createdAt || now) - (b.createdAt || now));
+    }
+  })
+
   chatEvent.on('channel-switch-to', (e) => {
     rows.value = []
     showButton.value = false;
@@ -149,7 +211,8 @@ onMounted(async () => {
     loadMessages();
   })
 
-  loadMessages();
+  await loadMessages();
+  firstLoad = true;
 })
 
 const messagesNextFlag = ref("");
@@ -189,6 +252,8 @@ const onScroll = (evt: any) => {
     showButton.value = offset > 200;
 
     if (elLst.scrollTop === 0) {
+      //  首次加载前不触发
+      if (!firstLoad) return;
       reachTop(evt);
     }
   }
@@ -289,14 +354,13 @@ const atHandleSearch = async (pattern: string, prefix: string) => {
 }
 
 let reachTopLoading = false;
-const reachTop = async (evt: any) => {
+const reachTop = throttle(async (evt: any) => {
   if (reachTopLoading) return;
   console.log('reachTop', messagesNextFlag.value)
   if (messagesNextFlag.value) {
     reachTopLoading = true;
     const messages = await chat.messageList(chat.curChannel?.id || '', messagesNextFlag.value);
     messagesNextFlag.value = messages.next || "";
-    reachTopLoading = false;
 
     let oldId = '';
     if (rows.value.length) {
@@ -304,6 +368,7 @@ const reachTop = async (evt: any) => {
     }
 
     rows.value.unshift(...messages.data);
+    reachTopLoading = false;
 
     nextTick(() => {
       // 注意: el会变，如果不在下一帧取的话
@@ -316,7 +381,7 @@ const reachTop = async (evt: any) => {
     })
     // virtualListRef.value?.scrollToIndex(messages.data.length);
   }
-}
+}, 1000)
 
 const sendEmoji = throttle((i: Thumb) => {
   chat.messageCreate(`<img src="id:${i.id}" />`)
@@ -342,8 +407,9 @@ const sendEmoji = throttle((i: Thumb) => {
             <!-- <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"
               @toBottom="reachBottom" @toTop="reachTop"> -->
             <template v-for="itemData in rows" :key="itemData.id">
-              <chat-item :avatar="itemData.member?.avatar || itemData.user?.avatar" :username="itemData.member?.nick || '小海豹'"
-                :content="itemData.content" :is-rtl="isMe(itemData)" :item="itemData" />
+              <chat-item :avatar="itemData.member?.avatar || itemData.user?.avatar"
+                :username="itemData.member?.nick || '小海豹'" :content="itemData.content" :is-rtl="isMe(itemData)"
+                :item="itemData" />
             </template>
 
             <!-- <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"

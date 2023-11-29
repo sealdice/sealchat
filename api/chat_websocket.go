@@ -7,6 +7,7 @@ import (
 	"sealchat/model"
 	"sealchat/protocol"
 	"sealchat/utils"
+	"sync"
 	"time"
 
 	"github.com/gofiber/contrib/websocket"
@@ -18,18 +19,29 @@ type ApiMsgPayload struct {
 	Echo string `json:"echo"`
 }
 
+type WsSyncConn struct {
+	*websocket.Conn
+	Mux sync.RWMutex
+}
+
+func (c *WsSyncConn) WriteJSON(v interface{}) error {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	return c.Conn.WriteJSON(v)
+}
+
 type ConnInfo struct {
 	User         *model.UserModel
-	Conn         *websocket.Conn
+	Conn         *WsSyncConn
 	LastPingTime int64
 	ChannelId    string
 }
 
 func websocketWorks(app *fiber.App) {
 	channelUsersMap := &utils.SyncMap[string, *utils.SyncSet[string]]{}
-	userId2ConnInfo := &utils.SyncMap[string, *utils.SyncMap[*websocket.Conn, *ConnInfo]]{}
+	userId2ConnInfo := &utils.SyncMap[string, *utils.SyncMap[*WsSyncConn, *ConnInfo]]{}
 
-	clientEnter := func(c *websocket.Conn, body any) (curUser *model.UserModel, curConnInfo *ConnInfo) {
+	clientEnter := func(c *WsSyncConn, body any) (curUser *model.UserModel, curConnInfo *ConnInfo) {
 		if body != nil {
 			// 有身份信息
 			m, ok := body.(map[string]any)
@@ -47,7 +59,7 @@ func websocketWorks(app *fiber.App) {
 
 			user, err := model.UserVerifyAccessToken(token)
 			if err == nil {
-				m, _ := userId2ConnInfo.LoadOrStore(user.ID, &utils.SyncMap[*websocket.Conn, *ConnInfo]{})
+				m, _ := userId2ConnInfo.LoadOrStore(user.ID, &utils.SyncMap[*WsSyncConn, *ConnInfo]{})
 				curConnInfo = &ConnInfo{Conn: c, LastPingTime: time.Now().Unix(), User: user}
 				m.Store(c, curConnInfo)
 
@@ -112,7 +124,7 @@ func websocketWorks(app *fiber.App) {
 		return fiber.ErrUpgradeRequired
 	})
 
-	app.Get("/ws/seal", websocket.New(func(c *websocket.Conn) {
+	app.Get("/ws/seal", websocket.New(func(rawConn *websocket.Conn) {
 		// websocket.Conn bindings https://pkg.go.dev/github.com/fasthttp/websocket?tab=doc#pkg-index
 		var (
 			mt          int
@@ -121,6 +133,7 @@ func websocketWorks(app *fiber.App) {
 			curUser     *model.UserModel
 			curConnInfo *ConnInfo
 		)
+		c := &WsSyncConn{rawConn, sync.RWMutex{}}
 
 		for {
 			if mt, msg, err = c.ReadMessage(); err != nil {
@@ -199,11 +212,15 @@ func websocketWorks(app *fiber.App) {
 		}
 
 		// 连接断开，后续封装成函数
-		userId2ConnInfo.Range(func(key string, value *utils.SyncMap[*websocket.Conn, *ConnInfo]) bool {
+		userId2ConnInfo.Range(func(key string, value *utils.SyncMap[*WsSyncConn, *ConnInfo]) bool {
 			exists := value.Delete(c)
 			if exists {
 				return false
 			}
+			return true
+		})
+		channelUsersMap.Range(func(chId string, value *utils.SyncSet[string]) bool {
+			value.Delete(curUser.ID)
 			return true
 		})
 	}))

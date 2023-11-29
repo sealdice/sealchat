@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gofiber/contrib/websocket"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"net/http"
@@ -18,7 +17,7 @@ import (
 	ds "github.com/sealdice/dicescript"
 )
 
-func apiChannelCreate(c *websocket.Conn, msg []byte, echo string) {
+func apiChannelCreate(c *WsSyncConn, msg []byte, echo string) {
 	db := model.GetDB()
 	data := struct {
 		// guild_id 字段无意义，因为不可能由客户端提交

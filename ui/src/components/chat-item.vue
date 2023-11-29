@@ -92,7 +92,10 @@ onMounted(() => {
         <span class="time">{{ timeText }}</span>
         <span v-if="props.item?.user?.is_bot || props.item?.user_id?.startsWith('BOT:')" class=" bg-blue-500 rounded-md px-2 text-white">bot</span>
       </span>
-      <div class="content break-all" v-html="parseContent(props)" @contextmenu="onContextMenu($event, item)"></div>
+      <div class="content break-all relative">
+        <div v-html="parseContent(props)" @contextmenu="onContextMenu($event, item)"></div>
+        <div v-if="props.item?.failed" class="failed absolute bg-red-600 rounded-md px-2 text-white">!</div>
+      </div>
     </div>
   </div>
 </template>
@@ -114,6 +117,12 @@ onMounted(() => {
       }
 
       >.content {
+        & > .failed {
+          left: -2rem;
+          right: auto;
+          top: 0;
+        }
+
         &:before {
           display: none;
         }
@@ -152,6 +161,11 @@ onMounted(() => {
     }
 
     >.content {
+      & > .failed {
+          right: -2rem;
+          top: 0;
+        }
+
       &:before {
         position: absolute;
         top: 0.5rem;
