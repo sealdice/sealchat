@@ -200,10 +200,17 @@ onMounted(async () => {
       rows.value.push(...messages.data);
       // 为防止混乱，重新排序
       rows.value.sort((a, b) => (a.createdAt || now) - (b.createdAt || now));
+
+      // 滚动到最下方
+      nextTick(() => {
+        scrollToBottom();
+        showButton.value = false;
+      })
     }
   })
 
   chatEvent.on('channel-switch-to', (e) => {
+    if (!firstLoad) return;
     rows.value = []
     showButton.value = false;
     // 具体不知道原因，但是必须在这个位置reset才行
@@ -221,17 +228,6 @@ const loadMessages = async () => {
   const messages = await chat.messageList(chat.curChannel?.id || '');
   messagesNextFlag.value = messages.next || "";
   rows.value.push(...messages.data);
-  // for (let i = 0; i < 5000; i++) {
-  //   rows.value.push({
-  //     id: `x${i}`,
-  //     timestamp: 123,
-  //     member: {
-  //       nick: '海豹',
-  //       avatar: 'https://avatars.githubusercontent.com/u/12621342?v=4'
-  //     },
-  //     content: '已经就绪' + Math.random() + "||||    " + i,
-  //   });
-  // }
 
   nextTick(() => {
     scrollToBottom();
@@ -353,12 +349,14 @@ const atHandleSearch = async (pattern: string, prefix: string) => {
   atLoading.value = false;
 }
 
-let reachTopLoading = false;
+let recentReachTopNext = '';
+
 const reachTop = throttle(async (evt: any) => {
-  if (reachTopLoading) return;
   console.log('reachTop', messagesNextFlag.value)
+  if (recentReachTopNext === messagesNextFlag.value) return;
+  recentReachTopNext = messagesNextFlag.value;
+
   if (messagesNextFlag.value) {
-    reachTopLoading = true;
     const messages = await chat.messageList(chat.curChannel?.id || '', messagesNextFlag.value);
     messagesNextFlag.value = messages.next || "";
 
@@ -368,7 +366,6 @@ const reachTop = throttle(async (evt: any) => {
     }
 
     rows.value.unshift(...messages.data);
-    reachTopLoading = false;
 
     nextTick(() => {
       // 注意: el会变，如果不在下一帧取的话

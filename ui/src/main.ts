@@ -26,7 +26,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
 import 'dayjs/locale/ja'
 
-dayjs.locale('zh-cn')
+dayjs.locale(document.documentElement.lang);
 dayjs.extend(relativeTime)
 
 import { useUserStore } from './stores/user'
