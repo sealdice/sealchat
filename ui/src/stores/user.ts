@@ -155,7 +155,7 @@ export const useUserStore = defineStore({
         return ''
       } catch (err) {
         // console.error('Authentication failed:', err)
-        return (err as any).data?.message || '错误';
+        return (err as any).response?.data?.message || '错误';
       }
     },
 

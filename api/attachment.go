@@ -43,7 +43,7 @@ func Upload(c *fiber.Ctx) error {
 			return err
 		}
 
-		limit := appConfig.ImageSizeLimit
+		limit := appConfig.ImageSizeLimit * 1024
 		if limit == 0 {
 			limit = limits.INT_MAX
 		}

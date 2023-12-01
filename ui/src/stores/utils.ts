@@ -21,6 +21,12 @@ export const useUtilsStore = defineStore({
   }),
 
   getters: {
+    fileSizeLimit: (state) => {
+      if (state.config) {
+        return state.config.imageSizeLimit * 1024;
+      }
+      return 2 * 1024 * 1024
+    }
   },
 
   actions: {

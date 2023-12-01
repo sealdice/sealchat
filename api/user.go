@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"regexp"
@@ -9,6 +10,7 @@ import (
 )
 
 func SignCheckMiddleware(c *fiber.Ctx) error {
+	fmt.Println("????")
 	//token := c.Cookies("token")
 	var token string
 
@@ -109,6 +111,18 @@ func UserSignup(c *fiber.Ctx) error {
 	if username == "" || password == "" {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"message": "用户名或密码不能为空",
+		})
+	}
+
+	if len(username) < 2 {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "用户名长度不能小于2位",
+		})
+	}
+
+	if len(password) < 3 {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "密码长度不能小于3位",
 		})
 	}
 
@@ -253,7 +267,7 @@ func UserChangePassword(c *fiber.Ctx) error {
 
 func UserInfo(c *fiber.Ctx) error {
 	u := getCurUser(c)
-	return c.JSON(fiber.Map{
+	return c.Status(http.StatusOK).JSON(fiber.Map{
 		"user": u,
 	})
 }

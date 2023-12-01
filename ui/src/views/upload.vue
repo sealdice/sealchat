@@ -1,5 +1,5 @@
 <script lang="tsx" setup>
-import { urlBase, fileSizeLimit } from '@/stores/_config';
+import { urlBase } from '@/stores/_config';
 import { computed, onMounted, ref } from 'vue';
 import FileUpload from 'vue-upload-component'
 import { useUserStore } from '@/stores/user';
@@ -8,6 +8,7 @@ import { useMessage } from 'naive-ui';
 import { useChatStore } from '@/stores/chat';
 import { blobToArrayBuffer } from '@/utils/tools';
 import { db } from '@/models/index';
+import { useUtilsStore } from '@/stores/utils';
 
 const user = useUserStore();
 const chat = useChatStore();
@@ -124,7 +125,11 @@ defineExpose({
     const el = uploadRef.value.$el;
     el.querySelector('input').click();
   }
+})
 
+const utils = useUtilsStore()
+const fileSizeLimit = computed(() => {
+  return utils.fileSizeLimit;
 })
 </script>
 

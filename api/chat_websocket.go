@@ -153,6 +153,10 @@ func websocketWorks(app *fiber.App) {
 					curUser, curConnInfo = clientEnter(c, gatewayMsg.Body)
 					solved = true
 				case protocol.OpPing:
+					if curUser == nil {
+						solved = true
+						continue
+					}
 					if info, ok := userId2ConnInfo.Load(curUser.ID); ok {
 						if info2, ok := info.Load(c); ok {
 							info2.LastPingTime = time.Now().Unix()

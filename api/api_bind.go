@@ -38,16 +38,13 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	app.Use(logger.New())
 	app.Use(compress.New())
 
-	// Default /test
-	app.Use(config.WebUrl, filesystem.New(filesystem.Config{
-		Root:       http.FS(uiStatic),
-		PathPrefix: "ui/dist",
-		MaxAge:     5 * 60,
-	}))
-
 	v1 := app.Group("/api/v1")
 	v1.Post("/user/signup", UserSignup)
 	v1.Post("/user/signin", UserSignin)
+
+	v1.Get("/config", func(c *fiber.Ctx) error {
+		return c.Status(http.StatusOK).JSON(appConfig)
+	})
 
 	v1Auth := v1.Group("")
 	v1Auth.Use(SignCheckMiddleware)
@@ -60,10 +57,6 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	v1Auth.Post("/upload", Upload)
 	v1Auth.Get("/attachments/list", AttachmentList)
 	v1Auth.Static("/attachments", "./data/upload")
-
-	v1.Get("/config", func(ctx *fiber.Ctx) error {
-		return ctx.JSON(appConfig)
-	})
 
 	v1AuthAdmin := v1Auth.Group("")
 	v1AuthAdmin.Use(UserRoleAdminMiddleware)
@@ -85,6 +78,13 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 		utils.WriteConfig(appConfig)
 		return nil
 	})
+
+	// Default /test
+	app.Use(config.WebUrl, filesystem.New(filesystem.Config{
+		Root:       http.FS(uiStatic),
+		PathPrefix: "ui/dist",
+		MaxAge:     5 * 60,
+	}))
 
 	websocketWorks(app)
 
