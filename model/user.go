@@ -19,6 +19,7 @@ type UserModel struct {
 	Nickname string `gorm:"null" json:"nick"` // 昵称
 	Avatar   string `json:"avatar"`           // 头像
 	Brief    string `json:"brief"`            // 简介
+	Role     string `json:"role"`             // 权限
 
 	Username string `gorm:"uniqueIndex;not null" json:"username"` // 用户名，唯一，非空
 	Password string `gorm:"not null" json:"-"`                    // 密码，非空
@@ -83,12 +84,21 @@ func hashPassword(password string, salt string) (string, error) {
 
 // 创建用户
 func UserCreate(username, password string, nickname string) (*UserModel, error) {
+	var role string
+
+	var count int64
+	db.Select("id").Find(&UserModel{}).Count(&count)
+	if count == 0 {
+		role = "role-admin"
+	}
+
 	salt := generateSalt()
 	hashedPassword, err := hashPassword(password, salt)
 	if err != nil {
 		return nil, err
 	}
 	user := &UserModel{
+		Role:     role,
 		Username: username,
 		Nickname: nickname,
 		Password: hashedPassword,
@@ -118,6 +128,10 @@ func UserAuthenticate(username, password string) (*UserModel, error) {
 }
 
 var JWT_KEY = []byte("sc-jwt_secret")
+
+func AcessTokenDeleteAllByUserID(userID string) error {
+	return db.Where("user_id = ?", userID).Delete(&AccessTokenModel{}).Error
+}
 
 // 生成 access_token
 func UserGenerateAccessToken(userID string) (string, error) {

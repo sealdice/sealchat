@@ -12,15 +12,15 @@ const message = useMessage()
 const formRef = ref<FormInst | null>(null)
 
 interface ModelType {
-  account: string;
   password: string | null
-  reenteredPassword: string | null
+  passwordNew: string | null
+  passwordNew2: string | null
 }
 
 const model = ref<ModelType>({
-  account: '',
   password: null,
-  reenteredPassword: null
+  passwordNew: null,
+  passwordNew2: null
 })
 
 function validatePasswordStartWith(
@@ -28,14 +28,14 @@ function validatePasswordStartWith(
   value: string
 ): boolean {
   return (
-    !!model.value.password &&
-    model.value.password.startsWith(value) &&
-    model.value.password.length >= value.length
+    !!model.value.passwordNew &&
+    model.value.passwordNew.startsWith(value) &&
+    model.value.passwordNew.length >= value.length
   )
 }
 
 function validatePasswordSame(rule: FormItemRule, value: string): boolean {
-  return value === model.value.password
+  return value === model.value.passwordNew
 }
 
 const handleValidateButtonClick = async (e: MouseEvent) => {
@@ -43,16 +43,20 @@ const handleValidateButtonClick = async (e: MouseEvent) => {
   formRef.value?.validate(async (errors) => {
     if (!errors) {
       try {
-        const resp = await userStore.signIn(model.value.account, model.value.password || '');
+        const resp = await userStore.changePassword({
+          password: model.value.password || '',
+          passwordNew: model.value.passwordNew || '',
+        });
         const ret = resp.data;
-        message.success('验证成功，即将返回首页')
+        message.success('验证成功，返回首页。所有旧设备登录将失效')
         if (ret.token) {
           // setTimeout(() => {
           router.replace({ name: 'home' })
           // }, 3000);
         }
       } catch (err) {
-        message.error('登录失败: ' + ((err as any).data?.message || '密码错误'))
+        console.log(err)
+        message.error('修改密码失败: ' + ((err as any).response?.data?.message || '未知错误'))
       }
     } else {
       console.log(errors)
@@ -69,29 +73,30 @@ const rules: FormRules = {
       message: '请输入密码'
     }
   ],
-  // reenteredPassword: [
-  //   {
-  //     required: true,
-  //     message: '请再次输入密码',
-  //     trigger: ['input', 'blur']
-  //   },
-  //   {
-  //     validator: validatePasswordStartWith,
-  //     message: '两次密码输入不一致',
-  //     trigger: 'input'
-  //   },
-  //   {
-  //     validator: validatePasswordSame,
-  //     message: '两次密码输入不一致',
-  //     trigger: ['blur', 'password-input']
-  //   }
-  // ]
+  passwordNew: [
+    {
+      required: true,
+      message: '请输入密码'
+    }
+  ],
+  passwordNew2: [
+    {
+      required: true,
+      message: '请输入新密码',
+      trigger: ['input', 'blur']
+    },
+    {
+      validator: validatePasswordSame,
+      message: '两次密码输入不一致',
+      trigger: ['blur', 'password-input']
+    }
+  ]
 }
 
 const rPasswordFormItemRef = ref<FormItemInst | null>(null)
 
 const handlePasswordInput = () => {
-  if (model.value.reenteredPassword) {
+  if (model.value.passwordNew) {
     rPasswordFormItemRef.value?.validate({ trigger: 'password-input' })
   }
 }
@@ -110,15 +115,21 @@ onMounted(async () => {
 <template>
   <div class="flex h-full w-full justify-center items-center">
     <div class="w-[50%] flex items-center justify-center flex-col" style="min-width: 20rem;">
-      <h2 class="font-bold text-xl mb-8">摸鱼中心</h2>
+      <h2 class="font-bold text-xl mb-8">修改密码</h2>
 
       <n-form ref="formRef" :model="model" :rules="rules" class="w-full px-8 max-w-md">
-        <n-form-item path="account" label="帐号">
-          <n-input v-model:value="model.account" @keydown.enter.prevent />
+        <n-form-item path="password" label="当前密码">
+          <n-input v-model:value="model.password" type="password" @input="handlePasswordInput" @keydown.enter.prevent />
         </n-form-item>
 
-        <n-form-item path="password" label="密码">
-          <n-input v-model:value="model.password" type="password" @input="handlePasswordInput" @keydown.enter.prevent />
+        <n-form-item path="passwordNew" label="新密码">
+          <n-input v-model:value="model.passwordNew" type="password" @input="handlePasswordInput"
+            @keydown.enter.prevent />
+        </n-form-item>
+
+        <n-form-item path="passwordNew2" label="重复新密码">
+          <n-input v-model:value="model.passwordNew2" type="password" @input="handlePasswordInput"
+            @keydown.enter.prevent />
         </n-form-item>
 
         <!-- <n-form-item ref="rPasswordFormItemRef" first path="reenteredPassword" label="重复密码">
@@ -133,8 +144,8 @@ onMounted(async () => {
                 <n-button type="text" v-if="config?.registerOpen">注册</n-button>
               </router-link>
 
-              <n-button :disabled="model.account === ''" round type="primary" @click="handleValidateButtonClick">
-                登录
+              <n-button :disabled="model.password === ''" round type="primary" @click="handleValidateButtonClick">
+                修改密码
               </n-button>
             </div>
           </n-col>

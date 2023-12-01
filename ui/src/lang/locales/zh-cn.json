@@ -18,10 +18,11 @@
     "connecting": "连接中 ...",
     "connected": "已连接",
     "disconnected": "已断开",
-    "reconnecting": "{0}s 后自动重连"
+    "reconnecting": "{0}s 后重连"
   },
   "headerMenu": {
     "profile": "个人信息",
+    "admin": "平台管理",
     "about": "关于",
     "lang": "界面语言",
     "langAuto": "自动",

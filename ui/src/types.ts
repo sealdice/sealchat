@@ -1,5 +1,14 @@
 import type { User, Message, Opcode, GatewayPayloadStructure, Channel } from '@satorijs/protocol'
 
+export interface ServerConfig {
+  serveAt: string;
+  domain: string;
+  registerOpen: boolean;
+  webUrl: string;
+  chatHistoryPersistentDays: number;
+  imageSizeLimit: number;
+  imageCompress: boolean;
+}
 
 export interface UserInfo {
   id: string;
@@ -10,6 +19,7 @@ export interface UserInfo {
   nick: string;
   avatar: string;
   brief: string;
+  role: "role-admin" | 'role-disabled' | '';
 }
 
 export interface TalkMessage {
@@ -29,7 +39,6 @@ interface APIMessageCreate {
 }
 
 export type APIMessageCreateResp = Message
-
 
 interface APIMessageGet {
   api: 'message.get'

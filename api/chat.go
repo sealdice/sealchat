@@ -34,10 +34,10 @@ func apiChannelCreate(c *WsSyncConn, msg []byte, echo string) {
 
 	db.Create(&m)
 
-	utils.Must0(c.WriteJSON(struct {
+	_ = c.WriteJSON(struct {
 		protocol.Channel
 		Echo string `json:"echo"`
-	}{Channel: protocol.Channel{ID: m.ID, Name: m.Name}, Echo: echo}))
+	}{Channel: protocol.Channel{ID: m.ID, Name: m.Name}, Echo: echo})
 }
 
 func apiChannelList(ctx *ChatContext, msg []byte) {
@@ -61,7 +61,7 @@ func apiChannelList(ctx *ChatContext, msg []byte) {
 		}
 	}
 
-	utils.Must0(c.WriteJSON(ret))
+	_ = c.WriteJSON(ret)
 }
 
 // 进入频道
@@ -95,12 +95,12 @@ func apiChannelEnter(ctx *ChatContext, msg []byte) {
 		User: ctx.User.ToProtocolType(),
 	})
 
-	utils.Must0(ctx.Conn.WriteJSON(struct {
+	_ = ctx.Conn.WriteJSON(struct {
 		protocol.Message
 		Echo string `json:"echo"`
 	}{
 		Echo: ctx.Echo,
-	}))
+	})
 }
 
 func apiMessageCreate(ctx *ChatContext, msg []byte) {
@@ -150,13 +150,13 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 			CreatedAt: time.Now().UnixMilli(), // 跟js相匹配
 		}
 
-		utils.Must0(c.WriteJSON(struct {
+		_ = c.WriteJSON(struct {
 			protocol.Message
 			Echo string `json:"echo"`
 		}{
 			Message: *messageData,
 			Echo:    echo,
-		}))
+		})
 
 		// 发出广播事件
 		ctx.BroadcastEvent(&protocol.Event{
@@ -229,13 +229,13 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 			})
 		}
 	} else {
-		utils.Must0(c.WriteJSON(struct {
+		_ = c.WriteJSON(struct {
 			ErrStatus int    `json:"errStatus"`
 			Echo      string `json:"echo"`
 		}{
 			ErrStatus: http.StatusInternalServerError,
 			Echo:      echo,
-		}))
+		})
 	}
 }
 
@@ -308,7 +308,7 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 		Echo: ctx.Echo,
 	}
 
-	utils.Must0(c.WriteJSON(ret))
+	_ = c.WriteJSON(ret)
 	//utils.Must0(c.WriteJSON(struct {
 	//	ErrStatus int    `json:"errStatus"`
 	//	Echo      string `json:"echo"`
@@ -366,5 +366,5 @@ func apiGuildMemberList(ctx *ChatContext, msg []byte) {
 		Echo: ctx.Echo,
 	}
 
-	utils.Must0(c.WriteJSON(ret))
+	_ = c.WriteJSON(ret)
 }

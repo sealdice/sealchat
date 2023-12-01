@@ -2,9 +2,11 @@ package main
 
 import (
 	"embed"
+	"github.com/samber/lo"
 	"os"
 	"sealchat/api"
 	"sealchat/model"
+	"sealchat/utils"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -32,6 +34,9 @@ func main() {
 		return
 	}
 
+	lo.Must0(os.MkdirAll("./data", 0644))
+	config := utils.ReadConfig()
+
 	model.DBInit()
-	api.Init(embedDirStatic)
+	api.Init(config, embedDirStatic)
 }

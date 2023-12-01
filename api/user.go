@@ -24,14 +24,31 @@ func SignCheckMiddleware(c *fiber.Ctx) error {
 		token = cookieToken
 	}
 
-	user, err := model.UserVerifyAccessToken(token)
-	if err != nil {
-		//fmt.Println(err.Error())
-		//return c.Redirect("http://127.0.0.1:4455/login", http.StatusMovedPermanently)
-		return &fiber.Error{
-			Code:    http.StatusUnauthorized,
-			Message: "凭证错误，需要重新登录",
+	var user *model.UserModel
+	var err error
+
+	if len(token) == 32 {
+		user, err = model.BotVerifyAccessToken(token)
+		if err != nil {
+			return c.Status(http.StatusUnauthorized).JSON(
+				fiber.Map{"message": err.Error()},
+			)
 		}
+	} else {
+		user, err = model.UserVerifyAccessToken(token)
+		if err != nil {
+			//fmt.Println(err.Error())
+			//return c.Redirect("http://127.0.0.1:4455/login", http.StatusMovedPermanently)
+			return c.Status(http.StatusUnauthorized).JSON(
+				fiber.Map{"message": "凭证错误，需要重新登录"},
+			)
+		}
+	}
+
+	if user.Role == "role-disabled" {
+		return c.Status(http.StatusUnauthorized).JSON(
+			fiber.Map{"message": "帐号被禁用"},
+		)
 	}
 	//if !*resp.Active {
 	//	//return c.Redirect("http://127.0.0.1:4455/login", http.StatusMovedPermanently)
@@ -54,6 +71,16 @@ func SignCheckMiddleware(c *fiber.Ctx) error {
 	//}
 	model.TimelineUpdate(user.ID)
 
+	return c.Next()
+}
+
+func UserRoleAdminMiddleware(c *fiber.Ctx) error {
+	user := getCurUser(c)
+	if user.Role != "role-admin" {
+		return c.Status(http.StatusForbidden).JSON(
+			fiber.Map{"message": "没有权限"},
+		)
+	}
 	return c.Next()
 }
 
@@ -135,6 +162,13 @@ func UserSignin(c *fiber.Ctx) error {
 			"message": "用户名或密码不能为空",
 		})
 	}
+
+	if len(password) < 3 {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "密码长度不能小于3位",
+		})
+	}
+
 	user, err := model.UserAuthenticate(username, password)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
@@ -167,8 +201,20 @@ func UserChangePassword(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
-	oldPassword := c.FormValue("old_password")
-	newPassword := c.FormValue("new_password")
+
+	var formData struct {
+		Password    string `form:"password" json:"password" binding:"required"`
+		PasswordNew string `form:"passwordNew" json:"passwordNew" binding:"required"`
+	}
+	if err := c.BodyParser(&formData); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "请求参数错误",
+		})
+	}
+
+	oldPassword := formData.Password
+	newPassword := formData.PasswordNew
+
 	if oldPassword == "" || newPassword == "" {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"message": "旧密码或新密码不能为空",
@@ -184,8 +230,24 @@ func UserChangePassword(c *fiber.Ctx) error {
 			"message": "修改密码失败",
 		})
 	}
+
+	err = model.AcessTokenDeleteAllByUserID(user.ID)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"message": "删除用户凭证失败",
+		})
+	}
+
+	token, err := model.UserGenerateAccessToken(user.ID)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"message": "生成token失败",
+		})
+	}
+
 	return c.JSON(fiber.Map{
 		"message": "修改密码成功",
+		"token":   token,
 	})
 }
 
@@ -242,5 +304,92 @@ func UserInfoUpdate(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"user": u,
+	})
+}
+
+func AdminUserList(c *fiber.Ctx) error {
+	//page := c.QueryInt("page", 1)
+	//pageSize := c.QueryInt("pageSize", 20)
+	db := model.GetDB()
+
+	var total int64
+	db.Model(&model.UserModel{}).Count(&total)
+
+	// 获取列表
+	var items []model.UserModel
+	//offset := (page - 1) * pageSize
+	db.Order("created_at asc").
+		//Offset(offset).Limit(pageSize).
+		//Preload("User", func(db *gorm.DB) *gorm.DB {
+		//	return db.Select("id, username")
+		//}).
+		Find(&items)
+
+	// 返回JSON响应
+	return c.JSON(fiber.Map{
+		//"page":     page,
+		//"pageSize": pageSize,
+		"total": total,
+		"items": items,
+	})
+}
+
+func AdminUserRoleSet(c *fiber.Ctx, role string) error {
+	uid := c.Params("id")
+	if uid == "" {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "参数错误",
+		})
+	}
+
+	user := &model.UserModel{}
+	db := model.GetDB()
+	db.First(user, "id = ?", uid)
+	if user.ID == "" {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "用户不存在",
+		})
+	}
+
+	curUser := getCurUser(c)
+	if user.ID == curUser.ID {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "无法修改当前账号状态",
+		})
+	}
+
+	user.Role = role
+	db.Save(user)
+
+	return c.JSON(fiber.Map{
+		"message": "修改成功",
+	})
+}
+
+func AdminUserDisable(c *fiber.Ctx) error {
+	return AdminUserRoleSet(c, "role-disabled")
+}
+
+func AdminUserEnable(c *fiber.Ctx) error {
+	return AdminUserRoleSet(c, "")
+}
+
+func AdminUserResetPassword(c *fiber.Ctx) error {
+	uid := c.Params("id")
+	if uid == "" {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "参数错误",
+		})
+	}
+
+	err := model.UserUpdatePassword(uid, "123456")
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"message": "重置密码失败",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "禁用成功",
 	})
 }

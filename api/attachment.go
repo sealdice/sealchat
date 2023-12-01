@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/afero"
+	"modernc.org/libc/limits"
 	"sealchat/model"
 )
 
@@ -25,21 +26,28 @@ func Upload(c *fiber.Ctx) error {
 	files := form.File["file"]
 	filenames := []string{}
 
+	tmpDir := "./data/temp/"
+	uploadDir := "./data/upload/"
+
 	// 遍历每个文件
 	for _, file := range files {
 		//f, err := appFs.Open("./assets/" + file.Filename + ".upload")
 		//if err != nil {
 		//	return err
 		//}
-		_ = appFs.MkdirAll("./assets/temp/", 0644)
-		_ = appFs.MkdirAll("./assets/upload/", 0644)
+		_ = appFs.MkdirAll(tmpDir, 0644)
+		_ = appFs.MkdirAll(uploadDir, 0644)
 
-		tempFile, err := afero.TempFile(appFs, "./assets/temp/", "*.upload")
+		tempFile, err := afero.TempFile(appFs, tmpDir, "*.upload")
 		if err != nil {
 			return err
 		}
-		//appFs.temp
-		hashCode, err := SaveMultipartFile(file, tempFile)
+
+		limit := appConfig.ImageSizeLimit
+		if limit == 0 {
+			limit = limits.INT_MAX
+		}
+		hashCode, err := SaveMultipartFile(file, tempFile, limit)
 		if err != nil {
 			return err
 		}
@@ -47,7 +55,7 @@ func Upload(c *fiber.Ctx) error {
 		fn := fmt.Sprintf("%s_%d", hexString, file.Size)
 
 		_ = tempFile.Close()
-		err = appFs.Rename(tempFile.Name(), "./assets/upload/"+fn)
+		err = appFs.Rename(tempFile.Name(), uploadDir+fn)
 		if err != nil {
 			return err
 		}

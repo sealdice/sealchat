@@ -361,6 +361,9 @@ const save = async () => {
           maxRows: 5
         }" />
       </n-form-item>
+      <n-form-item :label="'其他'" path="textareaValue">
+        <n-button>修改密码</n-button>
+      </n-form-item>
     </n-form>
     <div class="flex justify-end mb-4 space-x-4">
       <n-button @click="emit('close')">{{ $t('userProfile.cancel') }}</n-button>

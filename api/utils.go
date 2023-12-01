@@ -1,11 +1,11 @@
 package api
 
 import (
+	"github.com/samber/lo"
 	"github.com/spf13/afero"
 	"golang.org/x/crypto/blake2s"
 	"io"
 	"mime/multipart"
-	"sealchat/utils"
 	"sync"
 )
 
@@ -23,7 +23,7 @@ func copyZeroAlloc(w io.Writer, r io.Reader) (int64, error) {
 	return n, err
 }
 
-func SaveMultipartFile(fh *multipart.FileHeader, fOut afero.File) (hashOut []byte, err error) {
+func SaveMultipartFile(fh *multipart.FileHeader, fOut afero.File, limit int64) (hashOut []byte, err error) {
 	var (
 		f multipart.File
 	)
@@ -39,8 +39,9 @@ func SaveMultipartFile(fh *multipart.FileHeader, fOut afero.File) (hashOut []byt
 		}
 	}()
 
-	hash := utils.Must(blake2s.New256(nil))
-	teeReader := io.TeeReader(f, hash)
+	limitReader := io.LimitReader(f, limit)
+	hash := lo.Must(blake2s.New256(nil))
+	teeReader := io.TeeReader(limitReader, hash)
 
 	_, err = copyZeroAlloc(fOut, teeReader)
 	hashOut = hash.Sum(nil)

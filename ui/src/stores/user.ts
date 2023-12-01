@@ -31,7 +31,8 @@ export const useUserStore = defineStore({
       username: "",
       nick: '',
       avatar: '',
-      brief: ''
+      brief: '',
+      role: ''
     },
   }),
 
@@ -47,6 +48,19 @@ export const useUserStore = defineStore({
   },
 
   actions: {
+    async changePassword(form: { password: string, passwordNew: string }) {
+      const resp = await api.post('api/v1/user/change_password', {
+        password: form.password, passwordNew: form.passwordNew
+      }, {
+        headers: { 'Authorization': this.token }
+      })
+
+      // 密码重置后，之前的所有token都会被重置
+      const data = resp.data as { token: string, message: string };
+      const accessToken = data.token;
+      return resp;
+    },
+
     async signIn(username: string, password: string) {
       // 在此处进行用户鉴权操作，获取 accessToken
       const resp = await api.post('api/v1/user/signin', {

@@ -4,16 +4,20 @@ import { useChatStore } from '@/stores/chat';
 import { useUserStore } from '@/stores/user';
 import { Plus } from '@vicons/tabler';
 import { NIcon, useDialog, useMessage } from 'naive-ui';
-import { computed, ref, type Component, h } from 'vue';
+import { computed, ref, type Component, h, defineAsyncComponent } from 'vue';
 import Notif from './notif.vue'
 import UserProfile from './user-profile.vue'
+// import AdminSettings from './admin-settings.vue'
 import { useI18n } from 'vue-i18n'
 import { setLocale, setLocaleByNavigator } from '@/lang';
+
+const AdminSettings = defineAsyncComponent(() => import('./admin-settings.vue'));
 
 const { t } = useI18n()
 
 const notifShow = ref(false)
 const userProfileShow = ref(false)
+const adminShow = ref(false)
 const chat = useChatStore();
 const user = useUserStore();
 
@@ -23,6 +27,11 @@ const options = computed(() => [
     key: 'profile',
     // icon: renderIcon(UserIcon)
   },
+  user.info.role === 'role-admin' ? {
+    label: t('headerMenu.admin'),
+    key: 'admin',
+    // icon: renderIcon(UserIcon)
+  } : null,
   {
     label: t('headerMenu.lang'),
     key: 'lang',
@@ -56,17 +65,27 @@ const options = computed(() => [
     key: 'logout',
     // icon: renderIcon(LogoutIcon)
   }
-])
+].filter(i => i != null))
 
 
 const handleSelect = async (key: string | number) => {
   switch (key) {
     case 'notice':
+      userProfileShow.value = false;
+      adminShow.value = false;
       notifShow.value = !notifShow.value;
       break;
 
     case 'profile':
+      notifShow.value = false;
+      adminShow.value = false;
       userProfileShow.value = !userProfileShow.value;
+      break;
+
+    case 'admin':
+      notifShow.value = false;
+      userProfileShow.value = false;
+      adminShow.value = !adminShow.value;
       break;
 
     case 'logout':
@@ -185,7 +204,8 @@ const newChannel = async () => {
     </div>
   </div>
 
-  <n-modal v-model:show="showModal" preset="dialog" :title="$t('dialoChannelgNew.title')" :positive-text="$t('dialoChannelgNew.positiveText')" :negative-text="$t('dialoChannelgNew.negativeText')"
+  <n-modal v-model:show="showModal" preset="dialog" :title="$t('dialoChannelgNew.title')"
+    :positive-text="$t('dialoChannelgNew.positiveText')" :negative-text="$t('dialoChannelgNew.negativeText')"
     @positive-click="newChannel">
     <n-input v-model:value="newChannelName"></n-input>
   </n-modal>
@@ -193,6 +213,10 @@ const newChannel = async () => {
   <div v-if="userProfileShow" style="background-color: var(--n-color); margin-left: -1.5rem;"
     class="absolute flex justify-center items-center w-full h-full pointer-events-none z-10">
     <user-profile @close="userProfileShow = false" />
+  </div>
+  <div v-if="adminShow" style="background-color: var(--n-color); margin-left: -1.5rem;"
+    class="absolute flex justify-center items-center w-full h-full pointer-events-none z-10">
+    <admin-settings @close="adminShow = false" />
   </div>
   <notif v-show="notifShow" />
 </template>
