@@ -36,7 +36,7 @@ func main() {
 		return
 	}
 
-	lo.Must0(os.MkdirAll("./data", 0644))
+	lo.Must0(os.MkdirAll("./data", 0755))
 	config := utils.ReadConfig()
 
 	model.DBInit()

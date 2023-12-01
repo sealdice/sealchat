@@ -35,8 +35,8 @@ func Upload(c *fiber.Ctx) error {
 		//if err != nil {
 		//	return err
 		//}
-		_ = appFs.MkdirAll(tmpDir, 0644)
-		_ = appFs.MkdirAll(uploadDir, 0644)
+		_ = appFs.MkdirAll(tmpDir, 0755)
+		_ = appFs.MkdirAll(uploadDir, 0755)
 
 		tempFile, err := afero.TempFile(appFs, tmpDir, "*.upload")
 		if err != nil {

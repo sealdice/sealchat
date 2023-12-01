@@ -22,7 +22,7 @@ func ReadConfig() *AppConfig {
 		ServeAt:                   ":3212",
 		Domain:                    "127.0.0.1:3212",
 		RegisterOpen:              true,
-		WebUrl:                    "/test",
+		WebUrl:                    "/chat",
 		ChatHistoryPersistentDays: 60,
 		ImageSizeLimit:            2048,
 		ImageCompress:             true,
