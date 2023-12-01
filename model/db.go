@@ -72,3 +72,8 @@ func InitTestDB() *gorm.DB {
 func GetDB() *gorm.DB {
 	return db
 }
+
+func FlushWAL() {
+	_ = db.Exec("PRAGMA wal_checkpoint(TRUNCATE);")
+	_ = db.Exec("PRAGMA shrink_memory")
+}

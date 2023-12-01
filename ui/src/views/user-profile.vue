@@ -9,6 +9,7 @@ import { api } from '@/stores/_config';
 import { useMessage } from 'naive-ui';
 import { AxiosError } from 'axios';
 import { useI18n } from 'vue-i18n'
+import router from '@/router';
 
 const { t } = useI18n()
 
@@ -304,6 +305,10 @@ const save = async () => {
     message.error('修改失败: ' + (error as any).toString())
   }
 }
+
+const passwordChange = () => {
+  router.push({ name: 'user-password-reset' })
+}
 </script>
 
 <template>
@@ -362,7 +367,7 @@ const save = async () => {
         }" />
       </n-form-item>
       <n-form-item :label="'其他'" path="textareaValue">
-        <n-button>修改密码</n-button>
+        <n-button @click="passwordChange">修改密码</n-button>
       </n-form-item>
     </n-form>
     <div class="flex justify-end mb-4 space-x-4">

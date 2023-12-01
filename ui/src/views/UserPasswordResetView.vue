@@ -106,6 +106,10 @@ const userStore = useUserStore();
 const utils = useUtilsStore();
 const config = ref<ServerConfig | null>(null)
 
+const back = async () => {
+  router.back();
+}
+
 onMounted(async () => {
   const resp = await utils.configGet();
   config.value = resp.data;
@@ -144,9 +148,15 @@ onMounted(async () => {
                 <n-button type="text" v-if="config?.registerOpen">注册</n-button>
               </router-link>
 
-              <n-button :disabled="model.password === ''" round type="primary" @click="handleValidateButtonClick">
-                修改密码
-              </n-button>
+              <div class="space-x-2">
+                <n-button :disabled="model.password === ''" round @click="back">
+                  返回
+                </n-button>
+
+                <n-button :disabled="model.password === ''" round type="primary" @click="handleValidateButtonClick">
+                  修改密码
+                </n-button>
+              </div>
             </div>
           </n-col>
         </n-row>

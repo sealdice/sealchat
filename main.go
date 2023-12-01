@@ -4,9 +4,11 @@ import (
 	"embed"
 	"github.com/samber/lo"
 	"os"
+	"os/signal"
 	"sealchat/api"
 	"sealchat/model"
 	"sealchat/utils"
+	"time"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -38,5 +40,29 @@ func main() {
 	config := utils.ReadConfig()
 
 	model.DBInit()
+	cleanUp := func() {
+		if db := model.GetDB(); db != nil {
+			if sqlDB, err := db.DB(); err == nil {
+				_ = sqlDB.Close()
+			}
+		}
+	}
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		_ = <-c
+		cleanUp()
+		os.Exit(0)
+	}()
+
+	autoSave := func() {
+		t := time.NewTicker(3 * 60 * time.Second)
+		for {
+			<-t.C
+			model.FlushWAL()
+		}
+	}
+	go autoSave()
+
 	api.Init(config, embedDirStatic)
 }
