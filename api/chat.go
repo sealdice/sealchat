@@ -368,3 +368,15 @@ func apiGuildMemberList(ctx *ChatContext, msg []byte) {
 
 	_ = c.WriteJSON(ret)
 }
+
+func apiCommandRegister(ctx *ChatContext, msg []byte) {
+	data := struct {
+		Data map[string]string `json:"data"`
+	}{}
+	err := json.Unmarshal(msg, &data)
+	if err != nil {
+		return
+	}
+
+	commandTips.Store(ctx.User.ID, data.Data)
+}

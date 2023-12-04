@@ -37,6 +37,8 @@ type ConnInfo struct {
 	ChannelId    string
 }
 
+var commandTips utils.SyncMap[string, map[string]string]
+
 func websocketWorks(app *fiber.App) {
 	channelUsersMap := &utils.SyncMap[string, *utils.SyncSet[string]]{}
 	userId2ConnInfo := &utils.SyncMap[string, *utils.SyncMap[*WsSyncConn, *ConnInfo]]{}
@@ -57,7 +59,15 @@ func websocketWorks(app *fiber.App) {
 				return nil, nil
 			}
 
-			user, err := model.UserVerifyAccessToken(token)
+			var user *model.UserModel
+			var err error
+
+			if len(token) == 32 {
+				user, err = model.BotVerifyAccessToken(token)
+			} else {
+				user, err = model.UserVerifyAccessToken(token)
+			}
+
 			if err == nil {
 				m, _ := userId2ConnInfo.LoadOrStore(user.ID, &utils.SyncMap[*WsSyncConn, *ConnInfo]{})
 				curConnInfo = &ConnInfo{Conn: c, LastPingTime: time.Now().Unix(), User: user}
@@ -203,6 +213,9 @@ func websocketWorks(app *fiber.App) {
 						solved = true
 					case "guild.member.list":
 						apiGuildMemberList(ctx, msg)
+						solved = true
+					case "command.register":
+						apiCommandRegister(ctx, msg)
 						solved = true
 					}
 				}

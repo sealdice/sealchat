@@ -56,6 +56,14 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 
 	v1Auth.Post("/upload", Upload)
 	v1Auth.Get("/attachments/list", AttachmentList)
+	v1Auth.Get("/commands", func(c *fiber.Ctx) error {
+		m := map[string](map[string]string){}
+		commandTips.Range(func(key string, value map[string]string) bool {
+			m[key] = value
+			return true
+		})
+		return c.Status(http.StatusOK).JSON(m)
+	})
 	v1Auth.Static("/attachments", "./data/upload")
 
 	v1AuthAdmin := v1Auth.Group("")

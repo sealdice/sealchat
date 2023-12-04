@@ -51,7 +51,7 @@ type GuildMember struct {
 	Avatar   string   `json:"avatar"`
 	Title    string   `json:"title"`
 	Roles    []string `json:"roles"`
-	JoinedAt int      `json:"joined_at"`
+	JoinedAt int64    `json:"joined_at"`
 }
 
 type Login struct {
@@ -80,7 +80,7 @@ type Message struct {
 	Member    *GuildMember `json:"member"`
 	Content   string       `json:"content"`
 	Elements  []*Element   `json:"elements"`
-	Timestamp int          `json:"timestamp"`
+	Timestamp int64        `json:"timestamp"`
 	Quote     *Message     `json:"quote"`
 	CreatedAt int64        `json:"createdAt"`
 	UpdatedAt int64        `json:"updatedAt"`
@@ -135,7 +135,7 @@ const (
 )
 
 type Event struct {
-	ID        int          `json:"id"`
+	ID        int64        `json:"id"`
 	Type      EventName    `json:"type"`
 	SelfID    string       `json:"selfID"`
 	Platform  string       `json:"platform"`

@@ -21,6 +21,7 @@ import { Howl, Howler } from 'howler';
 import SoundMessageCreated from '@/assets/message.mp3';
 import RightClickMenu from './RightClickMenu.vue'
 import { nanoid } from 'nanoid';
+import { useUtilsStore } from '@/stores/utils';
 
 const uploadImages = useObservable<Thumb[]>(
   liveQuery(() => db.thumbs.toArray()) as any
@@ -133,9 +134,13 @@ const scrollToBottom = () => {
   });
 }
 
+const utils = useUtilsStore();
+
 let firstLoad = false;
 onMounted(async () => {
   await chat.tryInit();
+  await utils.commandsRefresh();
+
   const elInput = textInputRef.value;
   if (elInput) {
     // 注: n-mention 不支持这个事件监听，所以这里手动监听
@@ -343,6 +348,19 @@ const atHandleSearch = async (pattern: string, prefix: string) => {
           }
         }
       });
+
+      for (let [id, data] of Object.entries(utils.botCommands)) {
+        for (let [k, v] of Object.entries(data)) {
+          atOptions.value.push({
+            type: 'cmd',
+            value: k,
+            label: k,
+            data: {
+              "info": `/${k} ` + (v as any).split('\n', 1)[0].replace(/^\.\S+/, '')
+            }
+          })
+        }
+      }
       break;
   }
 

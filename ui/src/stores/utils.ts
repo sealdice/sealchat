@@ -11,6 +11,7 @@ import { useUserStore } from "./user";
 
 interface UtilsState {
   config: ServerConfig | null;
+  botCommands: { [key: string]: any };
 }
 
 export const useUtilsStore = defineStore({
@@ -18,6 +19,7 @@ export const useUtilsStore = defineStore({
 
   state: (): UtilsState => ({
     config: null,
+    botCommands: {} as any,
   }),
 
   getters: {
@@ -101,6 +103,15 @@ export const useUtilsStore = defineStore({
         headers: { 'Authorization': user.token }
       })
       return resp
-    }
+    },
+
+    async commandsRefresh() {
+      const user = useUserStore();
+      const resp = await api.get(`api/v1/commands`, {
+        headers: { 'Authorization': user.token }
+      })
+      this.botCommands = resp.data as any;
+      return resp
+    },
   },
 })
