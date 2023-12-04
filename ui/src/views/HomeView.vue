@@ -147,7 +147,7 @@ onMounted(async () => {
     elInput.$el.getElementsByTagName('textarea')[0].onkeydown = keyDown;
   }
 
-  var sound = new Howl({
+  const sound = new Howl({
     src: [SoundMessageCreated],
     html5: true
   });

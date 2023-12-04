@@ -1,13 +1,14 @@
-<script setup lang="ts">
+<script setup lang="tsx">
 import dayjs from 'dayjs';
 import imgAvatar from '@/assets/head2.png'
 import Element from '@satorijs/element'
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, h } from 'vue';
 import { urlBase } from '@/stores/_config';
 import DOMPurify from 'dompurify';
 import { useUserStore } from '@/stores/user';
 import { useChatStore } from '@/stores/chat';
 import type { Message } from '@satorijs/protocol';
+import { Click } from '@vicons/tabler';
 
 const user = useUserStore();
 const chat = useChatStore();
@@ -35,6 +36,51 @@ const parseContent = (props: any) => {
         textItems.push(DOMPurify.sanitize(item.toString()));
         hasImage.value = true;
         break;
+      case 'audio':
+        let src = ''
+        if (!item.attrs.src) break;
+
+        src = item.attrs.src;
+        if (item.attrs.src.startsWith('id:')) {
+          src = item.attrs.src.replace('id:', `${urlBase}/api/v1/attachments/`);
+        }
+
+        const sound = new Howl({
+          src: [src],
+          html5: true
+        });
+
+        const refPlaying = ref(false)
+
+        let ticker: any
+        const newTicker = () => {
+          ticker = setInterval(() => {
+            timeRef.value = sound.seek();
+          }, 1000)
+        }
+
+        const doPlay = () => {
+          if (refPlaying.value) {
+            sound.pause();
+            refPlaying.value = false;
+            clearInterval(ticker);
+          } else {
+            sound.play();
+            refPlaying.value = true;
+            newTicker()
+          }
+        }
+        const timeRef = ref(0);
+        sound.on('end', () => {
+          refPlaying.value = false;
+          clearInterval(ticker);
+        })
+        textItems.push(<n-button rounded onClick={doPlay} type="primary">
+          {refPlaying.value ? `暂停 ${Math.floor(timeRef.value)}/${Math.floor(sound.duration()) || '-'}` : '播放'}
+        </n-button>)
+        // textItems.push(DOMPurify.sanitize(item.toString()));
+        // hasImage.value = true;
+        break;
       case "at":
         if (item.attrs.id == user.info.id) {
           textItems.push(`<span class="text-blue-500 bg-gray-400 px-1" style="white-space: pre-wrap">@${item.attrs.name}</span>`);
@@ -47,6 +93,16 @@ const parseContent = (props: any) => {
     }
   }
 
+  return <span>
+    {textItems.map((item) => {
+      if (typeof item === 'string') {
+        return <span v-html={item}></span>
+      } else {
+        // vnode
+        return item;
+      }
+    })}
+  </span>
   return textItems.join('');
 }
 
@@ -90,10 +146,14 @@ onMounted(() => {
       <span class="title">
         <span v-if="!props.isRtl" class="name">{{ props.username }}</span>
         <span class="time">{{ timeText }}</span>
-        <span v-if="props.item?.user?.is_bot || props.item?.user_id?.startsWith('BOT:')" class=" bg-blue-500 rounded-md px-2 text-white">bot</span>
+        <span v-if="props.item?.user?.is_bot || props.item?.user_id?.startsWith('BOT:')"
+          class=" bg-blue-500 rounded-md px-2 text-white">bot</span>
       </span>
       <div class="content break-all relative">
-        <div v-html="parseContent(props)" @contextmenu="onContextMenu($event, item)"></div>
+        <!-- <div v-html="parseContent(props)" @contextmenu="onContextMenu($event, item)"></div> -->
+        <div @contextmenu="onContextMenu($event, item)">
+          <component :is="parseContent(props)" />
+        </div>
         <div v-if="props.item?.failed" class="failed absolute bg-red-600 rounded-md px-2 text-white">!</div>
       </div>
     </div>
@@ -117,7 +177,7 @@ onMounted(() => {
       }
 
       >.content {
-        & > .failed {
+        &>.failed {
           left: -2rem;
           right: auto;
           top: 0;
@@ -161,10 +221,10 @@ onMounted(() => {
     }
 
     >.content {
-      & > .failed {
-          right: -2rem;
-          top: 0;
-        }
+      &>.failed {
+        right: -2rem;
+        top: 0;
+      }
 
       &:before {
         position: absolute;

@@ -284,7 +284,7 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 
 	sql.Order("created_at desc").
 		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id, nickname, avatar")
+			return db.Select("id, nickname, avatar, is_bot")
 		}).
 		Preload("Member", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, nickname, channel_id")

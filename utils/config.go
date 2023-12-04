@@ -24,7 +24,7 @@ func ReadConfig() *AppConfig {
 		RegisterOpen:              true,
 		WebUrl:                    "/",
 		ChatHistoryPersistentDays: 60,
-		ImageSizeLimit:            2048,
+		ImageSizeLimit:            4096,
 		ImageCompress:             true,
 	}
 	content, err := os.ReadFile("./config.yaml")

@@ -34,19 +34,33 @@ const inputFile = async (newFile: any, oldFile: any) => {
     dialogVisible.value = false;
     files.value = [];
 
-    const x = db.thumbs.add({
-      id: newFile.response.files[0],
-      recentUsed: Number(Date.now()),
-      filename: newFile.file.name,
-      mimeType: newFile.file.type,
-      data: await blobToArrayBuffer(newFile.file),
-    });
-    console.log(222, x);
+    let fileType = 'image'
+    if (newFile.file.type.startsWith('audio/')) {
+      fileType = 'audio'
+    }
+    if (newFile.file.type.startsWith('image/')) {
+      fileType = 'image'
+    }
+
+    if (fileType === 'image') {
+      const x = db.thumbs.add({
+        id: newFile.response.files[0],
+        recentUsed: Number(Date.now()),
+        filename: newFile.file.name,
+        mimeType: newFile.file.type,
+        data: await blobToArrayBuffer(newFile.file),
+      });
+    }
 
     if (newFile.xhr) {
       if (newFile.xhr.status === 200) {
         // 上传成功
-        chat.messageCreate(`<img src="id:${newFile.response.files}" />`)
+        if (fileType === 'image') {
+          chat.messageCreate(`<img src="id:${newFile.response.files}" />`)
+        }
+        if (fileType === 'audio') {
+          chat.messageCreate(`<audio src="id:${newFile.response.files}" />`)
+        }
         console.log('success')
       } else {
         // 上传失败
@@ -59,9 +73,7 @@ const inputFile = async (newFile: any, oldFile: any) => {
 const inputFilter = function (newFile: any, oldFile: any, prevent: any) {
   if (newFile && !oldFile) {
     // 过滤不是图片后缀的文件
-    if (!/\.(jpeg|jpe|jpg|gif|png|webp)$/i.test(newFile.name)) {
-      return prevent()
-    } else {
+    if (/\.(jpeg|jpe|jpg|gif|png|webp)$/i.test(newFile.name)) {
       // 创建 blob 字段 用于图片预览
       newFile.blob = ''
       let URL = window.URL || window.webkitURL
@@ -74,6 +86,21 @@ const inputFilter = function (newFile: any, oldFile: any, prevent: any) {
         newFile.thumb = newFile.blob
       }
       dialogVisible.value = true;
+    } else if (/\.(mp3|ogg|aac|wav)$/i.test(newFile.name)) {
+      // 创建 blob 字段 音频预览
+      newFile.blob = ''
+      let URL = window.URL || window.webkitURL
+      if (URL && URL.createObjectURL) {
+        newFile.blob = URL.createObjectURL(newFile.file)
+      }
+
+      newFile.audio = ''
+      if (newFile.blob && newFile.type.substr(0, 6) === 'audio/') {
+        newFile.audio = newFile.blob
+      }
+      dialogVisible.value = true;
+    } else {
+      return prevent()
     }
   }
 }
@@ -113,8 +140,8 @@ function preventDefaults(e: any) {
 
 onMounted(() => {
   dragAreaRef.value.addEventListener('drop', (e: any) => {
-      // 有开着的就替换掉，但是不用做其余操作
-      uploadRef.value.dropActive = false; // 反应太慢，这里加速一下
+    // 有开着的就替换掉，但是不用做其余操作
+    uploadRef.value.dropActive = false; // 反应太慢，这里加速一下
     uploadRef.value.add(e.dataTransfer.files[0])
     preventDefaults(e);
   }, false);
@@ -148,12 +175,22 @@ const fileSizeLimit = computed(() => {
     <div class="p-4">
       <ul class="mb-4">
         <li v-for="file in files" :key="file.name" class="text-gray-600">
-          <img class="td-image-thumb" v-if="file.thumb" :src="file.thumb" />
-          <div class="text-center">
-            <span>{{ file.name }}</span>
-            <span> - </span>
-            <span :class="file.size > fileSizeLimit ? 'text-red-500' : ''">{{ filesize(file.size) }}</span>
-          </div>
+          <template v-if="file.thumb">
+            <img class="td-image-thumb" v-if="file.thumb" :src="file.thumb" />
+            <div class="text-center">
+              <span>{{ file.name }}</span>
+              <span> - </span>
+              <span :class="file.size > fileSizeLimit ? 'text-red-500' : ''">{{ filesize(file.size) }}</span>
+            </div>
+          </template>
+          <template v-else>
+            <!-- <img class="td-image-thumb" v-if="file.thumb" :src="file.thumb" /> -->
+            <div class="text-center">
+              <span>{{ file.name }}</span>
+              <span> - </span>
+              <span :class="file.size > fileSizeLimit ? 'text-red-500' : ''">{{ filesize(file.size) }}</span>
+            </div>
+          </template>
           <!-- {{ file.name }} - Error: {{ file.error }}, Success: {{ file.success }} -->
         </li>
       </ul>
