@@ -52,6 +52,24 @@ func DBInit() {
 	db.AutoMigrate(&UserEmojiModel{})
 	db.AutoMigrate(&BotTokenModel{})
 
+	isPermTableExists := db.Migrator().HasTable(&ChannelPermModel{})
+	db.AutoMigrate(&ChannelPermModel{})
+
+	if !isPermTableExists {
+		var items []*ChannelModel
+		db.Find(&items)
+
+		for _, i := range items {
+			db.Create(&ChannelPermModel{
+				StringPKBaseModel: StringPKBaseModel{
+					ID: gonanoid.Must(),
+				},
+				ChannelID: i.ID,
+				UserID:    ChannelPermUserALL,
+			})
+		}
+	}
+
 	// 初始化默认频道
 	var channelCount int64
 	db.Model(&ChannelModel{}).Count(&channelCount)

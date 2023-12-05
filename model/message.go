@@ -12,6 +12,7 @@ type MessageModel struct {
 	GuildID   string `json:"guild_id" gorm:"null"`
 	MemberID  string `json:"member_id" gorm:"null"`
 	UserID    string `json:"user_id" gorm:"null"`
+	ReplyID   string `json:"reply_id" gorm:"null"`
 
 	User   *UserModel   `json:"user"`   // 嵌套 User 结构体
 	Member *MemberModel `json:"member"` // 嵌套 Member 结构体

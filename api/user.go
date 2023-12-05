@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"regexp"
@@ -10,7 +9,6 @@ import (
 )
 
 func SignCheckMiddleware(c *fiber.Ctx) error {
-	fmt.Println("????")
 	//token := c.Cookies("token")
 	var token string
 

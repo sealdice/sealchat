@@ -32,7 +32,14 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 
 	appFs = afero.NewOsFs()
 
-	app := fiber.New()
+	bodyLimit := int(config.ImageSizeLimit * 1024)
+	if bodyLimit < 32*1024*1024 {
+		bodyLimit = 32 * 1024 * 1024
+	}
+
+	app := fiber.New(fiber.Config{
+		BodyLimit: bodyLimit,
+	})
 	app.Use(corsConfig)
 	app.Use(recover.New())
 	app.Use(logger.New())

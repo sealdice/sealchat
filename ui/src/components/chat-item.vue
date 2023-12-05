@@ -129,6 +129,8 @@ const onContextMenu = (e: MouseEvent, item: any) => {
   chat.messageMenu.hasImage = hasImage.value;
 }
 
+const emit = defineEmits(['avatar-longpress', 'avatar-click']);
+
 onMounted(() => {
   setInterval(() => {
     timeText.value = timeFormat(props.item?.createdAt);
@@ -139,13 +141,16 @@ onMounted(() => {
 <template>
   <div :id="item?.id" class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}"
     :class="props.isRtl ? ['is-rtl'] : []" :key="key">
-    <avatar :src="props.avatar" />
+    <avatar :src="props.avatar" @longpress="emit('avatar-longpress')" @click="emit('avatar-click')" />
     <!-- <img class="rounded-md w-12 h-12 border-gray-500 border" :src="props.avatar" /> -->
     <!-- <n-avatar :src="imgAvatar" size="large" bordered>海豹</n-avatar> -->
     <div class="right">
       <span class="title">
+        <span v-if="props.isRtl" class="time">{{ timeText }}</span>
+        <!-- <span class="name">{{ props.username }}</span> -->
         <span v-if="!props.isRtl" class="name">{{ props.username }}</span>
-        <span class="time">{{ timeText }}</span>
+        <span v-if="!props.isRtl" class="time">{{ timeText }}</span>
+        <!-- <span v-if="props.isRtl" class="time">{{ timeText }}</span> -->
         <span v-if="props.item?.user?.is_bot || props.item?.user_id?.startsWith('BOT:')"
           class=" bg-blue-500 rounded-md px-2 text-white">bot</span>
       </span>

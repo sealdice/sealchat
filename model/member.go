@@ -3,13 +3,15 @@ package model
 import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"sealchat/protocol"
+	"time"
 )
 
 type MemberModel struct {
 	StringPKBaseModel
-	Nickname  string `gorm:"null" json:"nick"`           // 昵称
-	ChannelID string `gorm:"not null" json:"channel_id"` // 频道ID
-	UserID    string `json:"user_id" gorm:"null"`        // 用户ID
+	Nickname     string `gorm:"null" json:"nick"`           // 昵称
+	ChannelID    string `gorm:"not null" json:"channel_id"` // 频道ID
+	UserID       string `json:"user_id" gorm:"null"`        // 用户ID
+	RecentSentAt int64  `json:"recentSentAt"`               // 最近发送消息的时间
 }
 
 func (*MemberModel) TableName() string {
@@ -20,6 +22,11 @@ func (u *MemberModel) ToProtocolType() *protocol.GuildMember {
 	return &protocol.GuildMember{
 		Nick: u.Nickname,
 	}
+}
+
+func (m *MemberModel) UpdateRecentSent() {
+	m.RecentSentAt = time.Now().UnixMilli()
+	db.Model(m).Update("recent_sent_at", m.RecentSentAt)
 }
 
 func MemberGetByUserIDAndChannelID(userId string, channelId string, defaultName string) (*MemberModel, error) {

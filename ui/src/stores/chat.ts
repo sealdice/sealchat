@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
-import type { User, Message, Opcode, GatewayPayloadStructure, Channel, EventName, Event } from '@satorijs/protocol'
+import type { User, Message, Opcode, GatewayPayloadStructure, Channel, EventName, Event, Member } from '@satorijs/protocol'
 import type { APIChannelCreateResp, APIChannelListResp, APIMessage } from '@/types';
 import { nanoid } from 'nanoid'
 import { groupBy } from 'lodash-es';
@@ -17,6 +17,7 @@ interface ChatState {
   // user: User,
   channelTree: Channel[],
   curChannel: Channel | null,
+  curMember: Member | null,
   connectState: 'connecting' | 'connected' | 'disconnected' | 'reconnecting',
   iReconnectAfterTime: number,
 
@@ -46,6 +47,7 @@ export const useChatStore = defineStore({
     subject: null,
     channelTree: [],
     curChannel: null,
+    curMember: null,
     connectState: 'connecting',
     iReconnectAfterTime: 0,
 
@@ -196,9 +198,14 @@ export const useChatStore = defineStore({
       const resp = await this.sendAPI('channel.create', { name }) as APIChannelCreateResp;
     },
 
+    async channelPrivateCreate(userId: string) {
+      return await this.sendAPI('channel.private.create', { 'user_id': userId });
+    },
+
     async channelSwitchTo(id: string) {
       this.curChannel = this.channelTree.find(c => c.id === id) || this.curChannel;
-      await this.sendAPI('channel.enter', { 'channel_id': id });
+      const resp = await this.sendAPI('channel.enter', { 'channel_id': id });
+      this.curMember = resp.member;
       localStorage.setItem('lastChannel', id);
       chatEvent.emit('channel-switch-to', undefined);
       this.channelList();
@@ -236,13 +243,29 @@ export const useChatStore = defineStore({
       return tree;
     },
 
-    async channelRefresh() {
+    async channelMembersCountRefresh() {
+      if (this.channelTree) {
+        const m: any = {}
+        const lst = this.channelTree.map(i => {
+          m[i.id] = i
+          return i.id
+        })
+        const resp = await this.sendAPI('channel.members_count', {
+          channel_ids: lst
+        });
+        for (let [k, v] of Object.entries(resp.data)) {
+          m[k].membersCount = v
+        }
+      }
+    },
+
+    async channelRefreshSetup() {
+      setInterval(async () => {
+        await this.channelMembersCountRefresh();
+      }, 10000);
+
       setInterval(async () => {
         await this.channelList();
-        if (!this.channelTree.find(c => c.id === this.curChannel?.id)) {
-          this.curChannel = this.channelTree[0];
-          chatEvent.emit('channel-deleted', undefined)
-        }
       }, 20000);
     },
 

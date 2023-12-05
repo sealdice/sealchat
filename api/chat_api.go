@@ -35,16 +35,45 @@ func apiChannelCreate(c *WsSyncConn, msg []byte, echo string) {
 	db.Create(&m)
 
 	_ = c.WriteJSON(struct {
-		protocol.Channel
-		Echo string `json:"echo"`
-	}{Channel: protocol.Channel{ID: m.ID, Name: m.Name}, Echo: echo})
+		Channel *protocol.Channel `json:"channel"`
+		Echo    string            `json:"echo"`
+	}{Channel: &protocol.Channel{ID: m.ID, Name: m.Name}, Echo: echo})
+}
+
+func apiChannelPrivateCreate(ctx *ChatContext, msg []byte) {
+	c := ctx.Conn
+	data := struct {
+		Data struct {
+			UserId string `json:"user_id"`
+		} `json:"data"`
+	}{}
+	err := json.Unmarshal(msg, &data)
+	if err != nil {
+		return
+	}
+
+	if ctx.User.ID == data.Data.UserId {
+		_ = ctx.Conn.WriteJSON(struct {
+			Code int    `json:"code"`
+			Msg  string `json:"msg"`
+			Echo string `json:"echo"`
+		}{Code: http.StatusBadRequest, Msg: "不能和自己创建私聊频道", Echo: ctx.Echo})
+		return
+	}
+
+	ch, isNew := model.ChannelPrivateNew(ctx.User.ID, data.Data.UserId)
+	fmt.Println("111", ch, isNew)
+
+	_ = c.WriteJSON(struct {
+		Channel *protocol.Channel `json:"channel"`
+		IsNew   bool              `json:"is_new"`
+		Echo    string            `json:"echo"`
+	}{Channel: ch.ToProtocolType(), IsNew: isNew, Echo: ctx.Echo})
 }
 
 func apiChannelList(ctx *ChatContext, msg []byte) {
-	db := model.GetDB()
 	c := ctx.Conn
-	var items []*model.ChannelModel
-	db.Find(&items)
+	items := model.ChannelList(ctx.User.ID)
 
 	ret := struct {
 		Data []*model.ChannelModel `json:"data"`
@@ -57,11 +86,42 @@ func apiChannelList(ctx *ChatContext, msg []byte) {
 
 	for _, item := range items {
 		if x, exists := ctx.ChannelUsersMap.Load(item.ID); exists {
-			item.MembersCount = x.Len()
+			if !item.IsPrivate {
+				item.MembersCount = x.Len()
+			}
 		}
 	}
 
 	_ = c.WriteJSON(ret)
+}
+
+func apiChannelMemberCount(ctx *ChatContext, msg []byte) {
+	c := ctx.Conn
+	data := struct {
+		Data struct {
+			ChannelIds []string `json:"channel_ids"`
+		} `json:"data"`
+	}{}
+	err := json.Unmarshal(msg, &data)
+	if err != nil {
+		return
+	}
+
+	id2count := map[string]int{}
+	for _, chId := range data.Data.ChannelIds {
+		if strings.Contains(chId, ":") {
+			// 私聊跳过
+			continue
+		}
+		if x, exists := ctx.ChannelUsersMap.Load(chId); exists {
+			id2count[chId] = x.Len()
+		}
+	}
+
+	_ = c.WriteJSON(struct {
+		Data map[string]int `json:"data"`
+		Echo string         `json:"echo"`
+	}{Data: id2count, Echo: ctx.Echo})
 }
 
 // 进入频道
@@ -84,6 +144,13 @@ func apiChannelEnter(ctx *ChatContext, msg []byte) {
 			s.Delete(ctx.User.ID)
 		}
 	}
+
+	member, err := model.MemberGetByUserIDAndChannelID(ctx.User.ID, channelId, ctx.User.Nickname)
+	if err != nil {
+		return
+	}
+	memberPT := member.ToProtocolType()
+
 	// 然后添加新的
 	chUserSet, _ := ctx.ChannelUsersMap.LoadOrStore(channelId, &utils.SyncSet[string]{})
 	chUserSet.Add(ctx.User.ID)
@@ -91,15 +158,17 @@ func apiChannelEnter(ctx *ChatContext, msg []byte) {
 	ctx.ConnInfo.ChannelId = channelId
 
 	ctx.BroadcastEventInChannel(channelId, &protocol.Event{
-		Type: "channel-entered",
-		User: ctx.User.ToProtocolType(),
+		Type:   "channel-entered",
+		User:   ctx.User.ToProtocolType(),
+		Member: memberPT,
 	})
 
 	_ = ctx.Conn.WriteJSON(struct {
-		protocol.Message
-		Echo string `json:"echo"`
+		Member *protocol.GuildMember `json:"member"`
+		Echo   string                `json:"echo"`
 	}{
-		Echo: ctx.Echo,
+		Member: memberPT,
+		Echo:   ctx.Echo,
 	})
 }
 
@@ -124,6 +193,13 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 		return
 	}
 
+	var channel model.ChannelModel
+	db.Where("id = ?", data.Data.ChannelID).First(&channel)
+	if channel.ID == "" {
+		return
+	}
+	channelData := channel.ToProtocolType()
+
 	m := model.MessageModel{
 		StringPKBaseModel: model.StringPKBaseModel{
 			ID: gonanoid.Must(),
@@ -137,9 +213,10 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 
 	if rows > 0 {
 		ctx.TagCheck(data.Data.ChannelID, m.ID, content)
+		member.UpdateRecentSent()
 
 		userData := ctx.User.ToProtocolType()
-		channelData := &protocol.Channel{ID: data.Data.ChannelID}
+		//channelData := &protocol.Channel{ID: data.Data.ChannelID}
 
 		messageData := &protocol.Message{
 			ID:        m.ID,

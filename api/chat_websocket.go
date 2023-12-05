@@ -196,8 +196,15 @@ func websocketWorks(app *fiber.App) {
 					case "channel.create":
 						apiChannelCreate(c, msg, apiMsg.Echo)
 						solved = true
+					case "channel.private.create":
+						// 私聊
+						apiChannelPrivateCreate(ctx, msg)
+						solved = true
 					case "channel.list":
 						apiChannelList(ctx, msg)
+						solved = true
+					case "channel.members_count":
+						apiChannelMemberCount(ctx, msg)
 						solved = true
 					case "channel.enter":
 						apiChannelEnter(ctx, msg)

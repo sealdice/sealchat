@@ -128,7 +128,7 @@ const renderIcon = (icon: Component) => {
 const chOptions = computed(() => {
   const lst = chat.channelTree.map(i => {
     return {
-      label: `${i.name} (${(i as any).membersCount})`,
+      label: (i.type === 3 || (i as any).isPrivate) ? i.name : `${i.name} (${(i as any).membersCount})`,
       key: i.id,
       icon: undefined as any,
       props: undefined as any,
@@ -173,13 +173,16 @@ const newChannel = async () => {
       <span class="ml-4">
         <n-dropdown trigger="click" :options="chOptions" @select="channelSelect">
           <!-- <n-button>{{ chat.curChannel?.name || '加载中 ...' }}</n-button> -->
-          <n-button text>{{ chat.curChannel?.name ? `${chat.curChannel?.name} (${(chat.curChannel as
-            any).membersCount})`
+          <n-button text v-if="(chat.curChannel?.type === 3 || (chat.curChannel as any)?.isPrivate)">{{
+            chat.curChannel?.name ? `${chat.curChannel?.name}` : '加载中 ...' }} ▼</n-button>
+          <n-button text v-else>{{
+            chat.curChannel?.name ? `${chat.curChannel?.name} (${(chat.curChannel as
+              any).membersCount})`
             : '加载中 ...' }} ▼</n-button>
         </n-dropdown>
       </span>
-
     </div>
+
     <div class="space-x-8 flex items-center">
       <!-- ● -->
       <span v-if="chat.connectState === 'connecting'" class=" text-blue-500">{{ $t('connectState.connecting') }}</span>

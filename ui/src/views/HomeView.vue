@@ -76,6 +76,7 @@ const send = throttle(async () => {
     message.error('消息过长，请分段发送');
     return;
   }
+  textToSend.value = '';
 
   const now = Date.now();
   const tmpMsg: Message = {
@@ -84,9 +85,7 @@ const send = throttle(async () => {
     "updatedAt": now,
     "content": t,
     "user": user.info,
-    "member": {
-      "nick": user.info.nick,
-    }
+    "member": chat.curMember
   }
   rows.value.push(tmpMsg);
   instantMessages.add(tmpMsg);
@@ -104,7 +103,6 @@ const send = throttle(async () => {
     (tmpMsg as any).failed = true;
   }
 
-  textToSend.value = '';
   scrollToBottom();
 }, 500)
 
@@ -139,7 +137,10 @@ const utils = useUtilsStore();
 let firstLoad = false;
 onMounted(async () => {
   await chat.tryInit();
+  await utils.configGet();
   await utils.commandsRefresh();
+
+  chat.channelRefreshSetup()
 
   const elInput = textInputRef.value;
   if (elInput) {
@@ -402,6 +403,22 @@ const sendEmoji = throttle((i: Thumb) => {
   chat.messageCreate(`<img src="id:${i.id}" />`)
 }, 1000)
 
+const avatarLongpress = (data: any) => {
+  if (data.user) {
+    textToSend.value += `@${data.user.nick} `;
+    textInputRef.value?.focus();
+  }
+}
+
+const avatarClick = async (data: any) => {
+  if (data.user) {
+    if (data.user.id === user.info.id) return;
+    const ch = await chat.channelPrivateCreate(data.user.id);
+    if (ch?.channel?.id) {
+      await chat.channelSwitchTo(ch.channel.id);
+    }
+  }
+}
 </script>
 
 <template>
@@ -424,7 +441,7 @@ const sendEmoji = throttle((i: Thumb) => {
             <template v-for="itemData in rows" :key="itemData.id">
               <chat-item :avatar="itemData.member?.avatar || itemData.user?.avatar"
                 :username="itemData.member?.nick || '小海豹'" :content="itemData.content" :is-rtl="isMe(itemData)"
-                :item="itemData" />
+                :item="itemData" @avatar-longpress="avatarLongpress(itemData)" @avatar-click="avatarClick(itemData)" />
             </template>
 
             <!-- <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"

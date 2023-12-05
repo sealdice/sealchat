@@ -25,6 +25,11 @@ type UserModel struct {
 	Password string `gorm:"not null" json:"-"`                    // 密码，非空
 	Salt     string `gorm:"not null" json:"-"`                    // 盐，非空
 	IsBot    bool   `gorm:"null" json:"is_bot"`                   // 是否是机器人
+
+	Token          string `gorm:"index" json:"token"` // 令牌
+	TokenExpiresAt int64  `json:"expiresAt"`
+
+	RecentSentAt int64 `json:"recentSentAt"` // 最近发送消息的时间
 }
 
 func (*UserModel) TableName() string {
