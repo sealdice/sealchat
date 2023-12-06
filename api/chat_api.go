@@ -537,6 +537,11 @@ func apiBotInfoSetName(ctx *ChatContext, msg []byte) {
 	for _, i := range ctx.Members {
 		i.Nickname = data.Data.Name
 		i.SaveInfo()
+		// 广播事件，名字更新了
+		ctx.BroadcastEventInChannel(i.ChannelID, &protocol.Event{
+			Type:   "channel-member-updated",
+			Member: i.ToProtocolType(),
+		})
 	}
 
 	ret := struct {
@@ -557,6 +562,40 @@ func apiBotCommandRegister(ctx *ChatContext, msg []byte) {
 	}
 
 	commandTips.Store(ctx.User.ID, data.Data)
+
+	ret := struct {
+		Echo string `json:"echo"`
+	}{
+		Echo: ctx.Echo,
+	}
+	_ = ctx.Conn.WriteJSON(ret)
+}
+
+func apiBotChannelMemberSetName(ctx *ChatContext, msg []byte) {
+	data := struct {
+		Data struct {
+			Name      string `json:"name"`
+			ChannelId string `json:"channel_id"`
+			UserId    string `json:"user_id"`
+			//Brief string `json:"brief"`
+		} `json:"data"`
+	}{}
+	err := json.Unmarshal(msg, &data)
+	if err != nil {
+		return
+	}
+
+	member, err := model.MemberGetByUserIDAndChannelIDBase(data.Data.UserId, data.Data.ChannelId, data.Data.Name, false)
+	if member != nil {
+		member.Nickname = data.Data.Name
+		member.SaveInfo()
+
+		// 广播事件，名字更新了
+		ctx.BroadcastEventInChannel(data.Data.ChannelId, &protocol.Event{
+			Type:   "channel-member-updated",
+			Member: member.ToProtocolType(),
+		})
+	}
 
 	ret := struct {
 		Echo string `json:"echo"`

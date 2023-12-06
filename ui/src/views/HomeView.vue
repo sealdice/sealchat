@@ -203,9 +203,20 @@ onMounted(async () => {
 
   chatEvent.off('channel-deleted', '*');
   chatEvent.on('channel-deleted', (e) => {
-    if (!e) {
+    if (e) {
       // 当前频道没了，直接进行重载
       chat.channelSwitchTo(chat.channelTree[0].id);
+    }
+  })
+
+  chatEvent.on('channel-member-updated', (e) => {
+    if (e) {
+      // 此事件只有member
+      for (let i of rows.value) {
+        if (i.user?.id === e.member?.user?.id) {
+          (i as any).member.nick = e?.member?.nick
+        }
+      }
     }
   })
 
@@ -487,7 +498,7 @@ const avatarClick = async (data: any) => {
           <!-- flex-grow -->
           <div class="edit-area flex justify-between space-x-2 my-2 px-2 relative">
             <div class="absolute bg-sky-300 rounded px-4 py-2" style="top: -4rem; right: 1rem" v-if="chat.curReplyTo">
-              正在回复: {{ chat.curReplyTo.member?.nick  }}
+              正在回复: {{ chat.curReplyTo.member?.nick }}
               <n-button @click="chat.curReplyTo = null">取消</n-button>
             </div>
 

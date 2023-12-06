@@ -236,6 +236,8 @@ func websocketWorks(app *fiber.App) {
 					case "bot.command.register":
 						apiBotCommandRegister(ctx, msg)
 						solved = true
+					case "bot.channel_member.set_name":
+						apiBotChannelMemberSetName(ctx, msg)
 					}
 				}
 			}

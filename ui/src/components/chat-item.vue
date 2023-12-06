@@ -148,9 +148,11 @@ onMounted(() => {
     <div class="right">
       <span class="title">
         <span v-if="props.isRtl" class="time">{{ timeText }}</span>
+        <span v-if="props.isRtl" class="name">{{ props.item?.member.nick }}</span>
         <!-- <span class="name">{{ props.username }}</span> -->
-        <span v-if="!props.isRtl" class="name">{{ props.username }}</span>
+        <span v-if="!props.isRtl" class="name">{{ props.item?.member.nick }}</span>
         <span v-if="!props.isRtl" class="time">{{ timeText }}</span>
+
         <!-- <span v-if="props.isRtl" class="time">{{ timeText }}</span> -->
         <span v-if="props.item?.user?.is_bot || props.item?.user_id?.startsWith('BOT:')"
           class=" bg-blue-500 rounded-md px-2 text-white">bot</span>
@@ -158,7 +160,7 @@ onMounted(() => {
       <div class="content break-all relative" @contextmenu="onContextMenu($event, item)">
         <!-- <div v-html="parseContent(props)" @contextmenu="onContextMenu($event, item)"></div> -->
         <div>
-          <div v-if="props.item?.quote" class="border-l-4 pl-2 border-blue-500  mb-2">
+          <div v-if="props.item?.quote?.id" class="border-l-4 pl-2 border-blue-500  mb-2">
             <span v-if="props.item?.quote?.is_revoked" class="text-gray-400">此消息已撤回</span>
             <span v-else class="text-gray-500">{{ props.item?.quote.content }}</span>
           </div>

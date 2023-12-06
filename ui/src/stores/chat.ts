@@ -33,7 +33,7 @@ interface ChatState {
 const apiMap = new Map<string, any>();
 let _connectResolve: any = null;
 
-type myEventName = EventName | 'message-created' | 'channel-switch-to' | 'connected'; // 当前npm版本缺这个事件
+type myEventName = EventName | 'message-created' | 'channel-switch-to' | 'connected' | 'channel-member-updated';
 export const chatEvent = new Emitter<{
   [key in myEventName]: (msg?: Event) => void;
   // 'message-created': (msg: Event) => void;
