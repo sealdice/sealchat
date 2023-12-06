@@ -139,7 +139,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :id="item?.id" class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}"
+  <div v-if="item?.is_revoked" class="py-4 text-center">一条消息已被撤回</div>
+  <div v-else :id="item?.id" class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}"
     :class="props.isRtl ? ['is-rtl'] : []" :key="key">
     <avatar :src="props.avatar" @longpress="emit('avatar-longpress')" @click="emit('avatar-click')" />
     <!-- <img class="rounded-md w-12 h-12 border-gray-500 border" :src="props.avatar" /> -->
@@ -154,9 +155,13 @@ onMounted(() => {
         <span v-if="props.item?.user?.is_bot || props.item?.user_id?.startsWith('BOT:')"
           class=" bg-blue-500 rounded-md px-2 text-white">bot</span>
       </span>
-      <div class="content break-all relative">
+      <div class="content break-all relative" @contextmenu="onContextMenu($event, item)">
         <!-- <div v-html="parseContent(props)" @contextmenu="onContextMenu($event, item)"></div> -->
-        <div @contextmenu="onContextMenu($event, item)">
+        <div>
+          <div v-if="props.item?.quote" class="border-l-4 pl-2 border-blue-500  mb-2">
+            <span v-if="props.item?.quote?.is_revoked" class="text-gray-400">此消息已撤回</span>
+            <span v-else class="text-gray-500">{{ props.item?.quote.content }}</span>
+          </div>
           <component :is="parseContent(props)" />
         </div>
         <div v-if="props.item?.failed" class="failed absolute bg-red-600 rounded-md px-2 text-white">!</div>

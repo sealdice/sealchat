@@ -12,10 +12,13 @@ type MessageModel struct {
 	GuildID   string `json:"guild_id" gorm:"null"`
 	MemberID  string `json:"member_id" gorm:"null"`
 	UserID    string `json:"user_id" gorm:"null"`
-	ReplyID   string `json:"reply_id" gorm:"null"`
+	QuoteID   string `json:"quote_id" gorm:"null"`
 
-	User   *UserModel   `json:"user"`   // 嵌套 User 结构体
-	Member *MemberModel `json:"member"` // 嵌套 Member 结构体
+	IsRevoked bool `json:"is_revoked" gorm:"null"` // 被撤回。这样实现可能不很严肃，但是能填补窗口中空白
+
+	User   *UserModel    `json:"user"`   // 嵌套 User 结构体
+	Member *MemberModel  `json:"member"` // 嵌套 Member 结构体
+	Quote  *MessageModel `json:"quote"`  // 嵌套 Message 结构体
 }
 
 func (*MessageModel) TableName() string {

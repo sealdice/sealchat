@@ -20,6 +20,7 @@ interface ChatState {
   curMember: Member | null,
   connectState: 'connecting' | 'connected' | 'disconnected' | 'reconnecting',
   iReconnectAfterTime: number,
+  curReplyTo: Message | null;
 
   messageMenu: {
     show: boolean
@@ -50,6 +51,7 @@ export const useChatStore = defineStore({
     curMember: null,
     connectState: 'connecting',
     iReconnectAfterTime: 0,
+    curReplyTo: null,
 
     messageMenu: {
       show: false,
@@ -177,6 +179,10 @@ export const useChatStore = defineStore({
       }
     },
 
+    async setReplayTo(item: any) {
+      this.curReplyTo = item;
+    },
+
     async sendAPI(api: string, data: APIMessage): Promise<any> {
       const echo = nanoid();
       return new Promise((resolve, reject) => {
@@ -294,9 +300,14 @@ export const useChatStore = defineStore({
       return memoizeWithTimeout(this.guildMemberListRaw, 30000)(guildId, next)
     },
 
-    async messageCreate(content: string) {
+    async messageDelete(channel_id: string, message_id: string) {
+      const resp = await this.sendAPI('message.delete', { channel_id, message_id });
+      return resp;
+    },
+
+    async messageCreate(content: string, quote_id?: string) {
       // const resp = await this.sendAPI('message.create', { channel_id: this.curChannel?.id, content });
-      const resp = await this.sendAPI('message.create', { channel_id: this.curChannel?.id, content });
+      const resp = await this.sendAPI('message.create', { channel_id: this.curChannel?.id, content, quote_id });
       // console.log(1111, resp)
       return resp;
     },

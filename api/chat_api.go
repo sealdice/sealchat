@@ -172,6 +172,61 @@ func apiChannelEnter(ctx *ChatContext, msg []byte) {
 	})
 }
 
+func apiMessageDelete(ctx *ChatContext, msg []byte) {
+	c := ctx.Conn
+	data := struct {
+		Data struct {
+			ChannelID string `json:"channel_id"`
+			MessageID string `json:"message_id"`
+		} `json:"data"`
+	}{}
+	err := json.Unmarshal(msg, &data)
+	if err != nil {
+		return
+	}
+
+	db := model.GetDB()
+	item := model.MessageModel{}
+	db.Where("channel_id = ? and id = ?", data.Data.ChannelID, data.Data.MessageID).First(&item)
+	if item.ID != "" {
+		if item.UserID != ctx.User.ID {
+			// 失败了
+			_ = c.WriteJSON(struct {
+				Echo string `json:"echo"`
+			}{Echo: ctx.Echo})
+			return
+		}
+
+		item.IsRevoked = true
+		db.Model(&item).Update("is_revoked", true)
+
+		var channel model.ChannelModel
+		db.Where("id = ?", data.Data.ChannelID).First(&channel)
+		if channel.ID == "" {
+			return
+		}
+		channelData := channel.ToProtocolType()
+
+		ctx.BroadcastEvent(&protocol.Event{
+			// 协议规定: 事件中必须含有 channel，message，user
+			Type:    protocol.EventMessageDeleted,
+			Message: item.ToProtocolType2(channelData),
+			Channel: channelData,
+			User:    ctx.User.ToProtocolType(),
+		})
+
+		_ = c.WriteJSON(struct {
+			Success bool   `json:"success"`
+			Echo    string `json:"echo"`
+		}{Success: true, Echo: ctx.Echo})
+		return
+	}
+
+	_ = c.WriteJSON(struct {
+		Echo string `json:"echo"`
+	}{Echo: ctx.Echo})
+}
+
 func apiMessageCreate(ctx *ChatContext, msg []byte) {
 	c := ctx.Conn
 	echo := ctx.Echo
@@ -179,6 +234,7 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 	data := struct {
 		Data struct {
 			ChannelID string `json:"channel_id"`
+			QuoteID   string `json:"quote_id"`
 			Content   string `json:"content"`
 		} `json:"data"`
 	}{}
@@ -200,6 +256,14 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 	}
 	channelData := channel.ToProtocolType()
 
+	var quote model.MessageModel
+	if data.Data.QuoteID != "" {
+		db.Where("id = ?", data.Data.QuoteID).First(&quote)
+		if quote.ID == "" {
+			return
+		}
+	}
+
 	m := model.MessageModel{
 		StringPKBaseModel: model.StringPKBaseModel{
 			ID: gonanoid.Must(),
@@ -207,6 +271,7 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 		UserID:    ctx.User.ID,
 		ChannelID: data.Data.ChannelID,
 		MemberID:  member.ID,
+		QuoteID:   data.Data.QuoteID,
 		Content:   content,
 	}
 	rows := db.Create(&m).RowsAffected
@@ -225,6 +290,7 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 			User:      userData,
 			Member:    member.ToProtocolType(),
 			CreatedAt: time.Now().UnixMilli(), // 跟js相匹配
+			Quote:     quote.ToProtocolType2(channelData),
 		}
 
 		_ = c.WriteJSON(struct {
@@ -363,6 +429,9 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, nickname, avatar, is_bot")
 		}).
+		Preload("Quote", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, content, created_at, user_id, is_revoked")
+		}).
 		Preload("Member", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, nickname, channel_id")
 		}).Limit(30).Find(&items)
@@ -373,6 +442,17 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 	items = lo.Reverse(items)
 	if count > int64(len(items)) && len(items) > 0 {
 		next = strconv.FormatInt(items[0].CreatedAt.UnixMilli(), 36)
+	}
+
+	for _, i := range items {
+		if i.IsRevoked {
+			i.Content = ""
+		}
+		if i.Quote != nil {
+			if i.Quote.IsRevoked {
+				i.Quote.Content = ""
+			}
+		}
 	}
 
 	ret := struct {
@@ -386,13 +466,6 @@ func apiMessageList(ctx *ChatContext, msg []byte) {
 	}
 
 	_ = c.WriteJSON(ret)
-	//utils.Must0(c.WriteJSON(struct {
-	//	ErrStatus int    `json:"errStatus"`
-	//	Echo      string `json:"echo"`
-	//}{
-	//	ErrStatus: http.StatusInternalServerError,
-	//	Echo:      echo,
-	//}))
 }
 
 func apiGuildMemberList(ctx *ChatContext, msg []byte) {
@@ -446,7 +519,35 @@ func apiGuildMemberList(ctx *ChatContext, msg []byte) {
 	_ = c.WriteJSON(ret)
 }
 
-func apiCommandRegister(ctx *ChatContext, msg []byte) {
+func apiBotInfoSetName(ctx *ChatContext, msg []byte) {
+	data := struct {
+		Data struct {
+			Name  string `json:"name"`
+			Brief string `json:"brief"`
+		} `json:"data"`
+	}{}
+	err := json.Unmarshal(msg, &data)
+	if err != nil {
+		return
+	}
+
+	ctx.User.Nickname = data.Data.Name
+	ctx.User.Brief = data.Data.Brief
+	ctx.User.SaveInfo()
+	for _, i := range ctx.Members {
+		i.Nickname = data.Data.Name
+		i.SaveInfo()
+	}
+
+	ret := struct {
+		Echo string `json:"echo"`
+	}{
+		Echo: ctx.Echo,
+	}
+	_ = ctx.Conn.WriteJSON(ret)
+}
+
+func apiBotCommandRegister(ctx *ChatContext, msg []byte) {
 	data := struct {
 		Data map[string]string `json:"data"`
 	}{}
@@ -456,4 +557,11 @@ func apiCommandRegister(ctx *ChatContext, msg []byte) {
 	}
 
 	commandTips.Store(ctx.User.ID, data.Data)
+
+	ret := struct {
+		Echo string `json:"echo"`
+	}{
+		Echo: ctx.Echo,
+	}
+	_ = ctx.Conn.WriteJSON(ret)
 }

@@ -14,6 +14,10 @@ type MemberModel struct {
 	RecentSentAt int64  `json:"recentSentAt"`               // 最近发送消息的时间
 }
 
+func (u *MemberModel) SaveInfo() {
+	db.Model(u).Select("nickname").Updates(u)
+}
+
 func (*MemberModel) TableName() string {
 	return "members"
 }

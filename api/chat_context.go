@@ -10,6 +10,7 @@ import (
 type ChatContext struct {
 	Conn     *WsSyncConn
 	User     *model.UserModel
+	Members  []*model.MemberModel
 	Echo     string
 	ConnInfo *ConnInfo
 

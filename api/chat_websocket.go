@@ -182,11 +182,17 @@ func websocketWorks(app *fiber.App) {
 			if !solved {
 				apiMsg := ApiMsgPayload{}
 				err := json.Unmarshal(msg, &apiMsg)
+
+				var members []*model.MemberModel
+				db := model.GetDB()
+				db.Where("user_id = ?", curUser.ID).Find(&members)
+
 				ctx := &ChatContext{
 					Conn:            c,
 					User:            curUser,
 					Echo:            apiMsg.Echo,
 					ConnInfo:        curConnInfo,
+					Members:         members,
 					ChannelUsersMap: channelUsersMap,
 					UserId2ConnInfo: userId2ConnInfo,
 				}
@@ -215,14 +221,20 @@ func websocketWorks(app *fiber.App) {
 					case "message.create", "qqq.x":
 						apiMessageCreate(ctx, msg)
 						solved = true
+					case "message.delete":
+						apiMessageDelete(ctx, msg)
+						solved = true
 					case "message.list":
 						apiMessageList(ctx, msg)
 						solved = true
 					case "guild.member.list":
 						apiGuildMemberList(ctx, msg)
 						solved = true
-					case "command.register":
-						apiCommandRegister(ctx, msg)
+					case "bot.info.set_name":
+						apiBotInfoSetName(ctx, msg)
+						solved = true
+					case "bot.command.register":
+						apiBotCommandRegister(ctx, msg)
 						solved = true
 					}
 				}

@@ -76,7 +76,9 @@ const send = throttle(async () => {
     message.error('消息过长，请分段发送');
     return;
   }
+  let replyTo = chat.curReplyTo || undefined;
   textToSend.value = '';
+  chat.curReplyTo = null;
 
   const now = Date.now();
   const tmpMsg: Message = {
@@ -85,7 +87,8 @@ const send = throttle(async () => {
     "updatedAt": now,
     "content": t,
     "user": user.info,
-    "member": chat.curMember
+    "member": chat.curMember,
+    "quote": replyTo,
   }
   rows.value.push(tmpMsg);
   instantMessages.add(tmpMsg);
@@ -93,7 +96,7 @@ const send = throttle(async () => {
   try {
     t = await replaceUsernames(t)
     tmpMsg.content = t;
-    const newMsg = await chat.messageCreate(t);
+    const newMsg = await chat.messageCreate(t, replyTo?.id);
     for (let [k, v] of Object.entries(newMsg)) {
       (tmpMsg as any)[k] = v;
     }
@@ -151,6 +154,23 @@ onMounted(async () => {
   const sound = new Howl({
     src: [SoundMessageCreated],
     html5: true
+  });
+
+  chatEvent.off('message-deleted', '*');
+  chatEvent.on('message-deleted', (e?: Event) => {
+    console.log('delete', e?.message?.id)
+    for (let i of rows.value) {
+      if (i.id === e?.message?.id) {
+        i.content = '';
+        (i as any).is_revoked = true;
+      }
+      if (i.quote) {
+        if (i.quote?.id === e?.message?.id) {
+          i.quote.content = '';
+          (i as any).quote.is_revoked = true;
+        }
+      }
+    }
   });
 
   chatEvent.off('message-created', '*');
@@ -466,6 +486,11 @@ const avatarClick = async (data: any) => {
 
           <!-- flex-grow -->
           <div class="edit-area flex justify-between space-x-2 my-2 px-2 relative">
+            <div class="absolute bg-sky-300 rounded px-4 py-2" style="top: -4rem; right: 1rem" v-if="chat.curReplyTo">
+              正在回复: {{ chat.curReplyTo.member?.nick  }}
+              <n-button @click="chat.curReplyTo = null">取消</n-button>
+            </div>
+
             <div class="flex justify-between relative w-full">
               <!-- 输入框左侧按钮，因为n-mention不支持#prefix和#suffix，所以单独拿出来了 -->
               <div class="absolute" style="z-index: 1; left: 0.5rem; top: .55rem;">
