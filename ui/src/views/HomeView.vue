@@ -217,6 +217,7 @@ onMounted(async () => {
           (i as any).member.nick = e?.member?.nick
         }
       }
+      // if (chat.curMember)
     }
   })
 
@@ -446,7 +447,10 @@ const avatarClick = async (data: any) => {
     if (data.user.id === user.info.id) return;
     const ch = await chat.channelPrivateCreate(data.user.id);
     if (ch?.channel?.id) {
-      await chat.channelSwitchTo(ch.channel.id);
+      await chat.channelList()
+      nextTick(async () => {
+        await chat.channelSwitchTo(ch.channel.id);
+      })
     }
   }
 }

@@ -162,7 +162,9 @@ onMounted(() => {
         <div>
           <div v-if="props.item?.quote?.id" class="border-l-4 pl-2 border-blue-500  mb-2">
             <span v-if="props.item?.quote?.is_revoked" class="text-gray-400">此消息已撤回</span>
-            <span v-else class="text-gray-500">{{ props.item?.quote.content }}</span>
+            <span v-else class="text-gray-500">
+              <component :is="parseContent(props.item?.quote)" />
+            </span>
           </div>
           <component :is="parseContent(props)" />
         </div>

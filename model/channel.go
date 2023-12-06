@@ -90,17 +90,17 @@ func ChannelList(userId string) []*ChannelModel {
 	// 加载有权限访问的频道
 	var items []*ChannelPermModel
 	db.Where("user_id = ? or user_id = ?", ChannelPermUserALL, userId).Find(&items)
-	db.Find(&items)
 
 	ids := lo.Map(items, func(item *ChannelPermModel, index int) string {
 		return item.ChannelID
 	})
+	ids = lo.Uniq(ids)
 
 	var items2 []*ChannelModel
 	db.Where("id in ?", ids).Order("is_private asc, created_at asc").Find(&items2)
 
 	// 加载私人频道
-	id2channels := make(map[string][]*ChannelModel)
+	uid2channel := make(map[string]*ChannelModel)
 
 	var uids []string
 	for _, i := range items2 {
@@ -108,22 +108,18 @@ func ChannelList(userId string) []*ChannelModel {
 			for _, j := range i.GetPrivateUserIDs() {
 				if j != userId {
 					uids = append(uids, j)
-					//if id2channels[i.ID] == nil {
-					//	id2channels[i.ID] = []*ChannelModel{}
-					//}
-					id2channels[j] = append(id2channels[j], i)
+					uid2channel[j] = i
 				}
 			}
 			i.Name = "@私聊频道"
 		}
 	}
+	uids = lo.Uniq(uids)
 
 	var uItems []*UserModel
 	db.Where("id in ?", uids).Find(&uItems)
 	for _, i := range uItems {
-		for _, j := range id2channels[i.ID] {
-			j.Name = fmt.Sprintf("@%s", i.Nickname)
-		}
+		uid2channel[i.ID].Name = fmt.Sprintf("@%s", i.Nickname)
 	}
 
 	return items2
