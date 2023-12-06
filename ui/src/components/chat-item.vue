@@ -9,9 +9,12 @@ import { useUserStore } from '@/stores/user';
 import { useChatStore } from '@/stores/chat';
 import type { Message } from '@satorijs/protocol';
 import { Click } from '@vicons/tabler';
+import { useUtilsStore } from '@/stores/utils';
+import { Howl, Howler } from 'howler';
 
 const user = useUserStore();
 const chat = useChatStore();
+const utils = useUtilsStore();
 
 function timeFormat(time?: string) {
   if (!time) return '未知';
@@ -45,38 +48,36 @@ const parseContent = (props: any) => {
           src = item.attrs.src.replace('id:', `${urlBase}/api/v1/attachments/`);
         }
 
-        const sound = new Howl({
-          src: [src],
-          html5: true
-        });
+        let info = utils.sounds.get(src);
 
-        const refPlaying = ref(false)
+        if (!info) {
+          const sound = new Howl({
+            src: [src],
+            html5: true
+          });
 
-        let ticker: any
-        const newTicker = () => {
-          ticker = setInterval(() => {
-            timeRef.value = sound.seek();
-          }, 1000)
+          info = {
+            sound,
+            time: 0,
+            playing: false
+          }
+          utils.sounds.set(src, info);
+          utils.soundsTryInit()
         }
 
         const doPlay = () => {
-          if (refPlaying.value) {
-            sound.pause();
-            refPlaying.value = false;
-            clearInterval(ticker);
+          if (!info) return;
+          if (info.playing) {
+            info.sound.pause();
+            info.playing = false;
           } else {
-            sound.play();
-            refPlaying.value = true;
-            newTicker()
+            info.sound.play();
+            info.playing = true;
           }
         }
-        const timeRef = ref(0);
-        sound.on('end', () => {
-          refPlaying.value = false;
-          clearInterval(ticker);
-        })
+
         textItems.push(<n-button rounded onClick={doPlay} type="primary">
-          {refPlaying.value ? `暂停 ${Math.floor(timeRef.value)}/${Math.floor(sound.duration()) || '-'}` : '播放'}
+          {info.playing ? `暂停 ${Math.floor(info.time)}/${Math.floor(info.sound.duration()) || '-'}` : '播放'}
         </n-button>)
         // textItems.push(DOMPurify.sanitize(item.toString()));
         // hasImage.value = true;
@@ -103,7 +104,6 @@ const parseContent = (props: any) => {
       }
     })}
   </span>
-  return textItems.join('');
 }
 
 const props = defineProps({

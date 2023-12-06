@@ -1,5 +1,6 @@
 import { defineStore } from "pinia"
 import type { ServerConfig, UserInfo } from "@/types";
+import { Howl, Howler } from 'howler';
 
 import axiosFactory from "axios"
 import { cloneDeep } from "lodash-es";
@@ -9,9 +10,17 @@ import { api } from "./_config";
 import { useChatStore } from "./chat";
 import { useUserStore } from "./user";
 
+interface SoundItem {
+  sound: Howl;
+  time: number;
+  playing: boolean;
+}
+
 interface UtilsState {
   config: ServerConfig | null;
   botCommands: { [key: string]: any };
+  sounds: Map<string, SoundItem>;
+  soundsTimer: any;
 }
 
 export const useUtilsStore = defineStore({
@@ -20,6 +29,8 @@ export const useUtilsStore = defineStore({
   state: (): UtilsState => ({
     config: null,
     botCommands: {} as any,
+    sounds: new Map<string, SoundItem>(),
+    soundsTimer: null,
   }),
 
   getters: {
@@ -32,6 +43,15 @@ export const useUtilsStore = defineStore({
   },
 
   actions: {
+    async soundsTryInit() {
+      if (this.soundsTimer) return;
+      this.soundsTimer = setInterval(() => {
+        for (let [k,v] of this.sounds.entries()) {
+          v.time = v.sound.seek();
+        }
+      }, 1000);
+    },
+
     async configGet() {
       const user = useUserStore();
       const resp = await api.get('api/v1/config', {
