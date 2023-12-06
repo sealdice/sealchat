@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
-import type { User, Message, Opcode, GatewayPayloadStructure, Channel, EventName, Event, Member } from '@satorijs/protocol'
+import type { User, Message, Opcode, GatewayPayloadStructure, Channel, EventName, Event, GuildMember } from '@satorijs/protocol'
 import type { APIChannelCreateResp, APIChannelListResp, APIMessage } from '@/types';
 import { nanoid } from 'nanoid'
 import { groupBy } from 'lodash-es';
@@ -17,7 +17,7 @@ interface ChatState {
   // user: User,
   channelTree: Channel[],
   curChannel: Channel | null,
-  curMember: Member | null,
+  curMember: GuildMember | null,
   connectState: 'connecting' | 'connected' | 'disconnected' | 'reconnecting',
   iReconnectAfterTime: number,
   curReplyTo: Message | null;

@@ -87,7 +87,7 @@ const send = throttle(async () => {
     "updatedAt": now,
     "content": t,
     "user": user.info,
-    "member": chat.curMember,
+    "member": chat.curMember || undefined,
     "quote": replyTo,
   }
   rows.value.push(tmpMsg);
