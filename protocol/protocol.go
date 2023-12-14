@@ -45,7 +45,7 @@ type User struct {
 }
 
 type GuildMember struct {
-	ID       string   `json:"ID"`
+	ID       string   `json:"id"`
 	User     *User    `json:"user"`
 	Name     string   `json:"name"` // 指用户名吗？
 	Nick     string   `json:"nick"`

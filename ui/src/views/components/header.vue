@@ -5,13 +5,13 @@ import { useUserStore } from '@/stores/user';
 import { Plus } from '@vicons/tabler';
 import { NIcon, useDialog, useMessage } from 'naive-ui';
 import { computed, ref, type Component, h, defineAsyncComponent } from 'vue';
-import Notif from './notif.vue'
+import Notif from '../notif.vue'
 import UserProfile from './user-profile.vue'
 // import AdminSettings from './admin-settings.vue'
 import { useI18n } from 'vue-i18n'
 import { setLocale, setLocaleByNavigator } from '@/lang';
 
-const AdminSettings = defineAsyncComponent(() => import('./admin-settings.vue'));
+const AdminSettings = defineAsyncComponent(() => import('../admin/admin-settings.vue'));
 
 const { t } = useI18n()
 

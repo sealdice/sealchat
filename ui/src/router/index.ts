@@ -1,8 +1,8 @@
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import UserSigninVue from '@/views/SignInView.vue'
-import UserSignupVue from '@/views/SignUpView.vue'
-import UserPasswordResetView from '@/views/UserPasswordResetView.vue'
+import UserSigninVue from '@/views/user/sign-in-view.vue'
+import UserSignupVue from '@/views/user/sign-up-view.vue'
+import UserPasswordResetView from '@/views/user/password-reset-view.vue'
 
 
 const router = createRouter({

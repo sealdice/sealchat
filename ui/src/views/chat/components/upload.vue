@@ -219,4 +219,3 @@ const fileSizeLimit = computed(() => {
   background: #000;
 }
 </style>
-```

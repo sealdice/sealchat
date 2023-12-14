@@ -1,14 +1,11 @@
 <script setup lang="tsx">
 import dayjs from 'dayjs';
-import imgAvatar from '@/assets/head2.png'
 import Element from '@satorijs/element'
 import { onMounted, ref, h } from 'vue';
 import { urlBase } from '@/stores/_config';
 import DOMPurify from 'dompurify';
 import { useUserStore } from '@/stores/user';
 import { useChatStore } from '@/stores/chat';
-import type { Message } from '@satorijs/protocol';
-import { Click } from '@vicons/tabler';
 import { useUtilsStore } from '@/stores/utils';
 import { Howl, Howler } from 'howler';
 

@@ -30,6 +30,4 @@ func TimelineList(c *fiber.Ctx) error {
 		"total": total,
 		"items": items,
 	})
-
-	return nil
 }

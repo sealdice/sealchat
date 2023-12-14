@@ -281,7 +281,7 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 		member.UpdateRecentSent()
 
 		userData := ctx.User.ToProtocolType()
-		//channelData := &protocol.Channel{ID: data.Data.ChannelID}
+		// channelData := &protocol.Channel{ID: data.Data.ChannelID}
 
 		messageData := &protocol.Message{
 			ID:        m.ID,

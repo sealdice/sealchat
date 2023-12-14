@@ -59,7 +59,8 @@ const addToMyEmoji = async () => {
     <!-- <context-menu-item label="Item with a icon" icon="icon-reload-1" @click="alertContextMenuItemClicked('Item2')" /> -->
     <!-- <context-menu-item label="Test Item" @click="alertContextMenuItemClicked('Item2')" /> -->
     <context-menu-item label="回复" @click="clickReplyTo" />
-    <context-menu-item label="撤回" @click="clickDelete" v-if="chat.messageMenu.item?.user?.id && (chat.messageMenu.item?.user?.id === user.info.id)" />
+    <context-menu-item label="撤回" @click="clickDelete"
+      v-if="chat.messageMenu.item?.user?.id && (chat.messageMenu.item?.user?.id === user.info.id)" />
     <!-- <context-menu-group label="Menu with child">
       <context-menu-item label="Item1" @click="alertContextMenuItemClicked('Item2-1')" />
       <context-menu-item label="Item1" @click="alertContextMenuItemClicked('Item2-2')" />

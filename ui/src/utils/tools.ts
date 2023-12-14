@@ -61,3 +61,17 @@ export function memoizeWithTimeout<T>(func: (...args: any[]) => T, timeout: numb
 
   return timedMemoizedFunc;
 }
+
+export function contentEscape(text: string) {
+  return text.replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export function contentUnescape(str: string): string {
+  return str.replace(/&quot;/g, '"')
+    .replace(/&gt;/g, '>')
+    .replace(/&lt;/g, '<')
+    .replace(/&amp;/g, '&');
+}
