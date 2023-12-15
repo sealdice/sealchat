@@ -10,8 +10,6 @@ export const urlBase = import.meta.env.MODE === 'development'
 
 console.log('mode', import.meta.env.MODE)
 
-export const fileSizeLimit = 2 * 1024 * 1024
-
 export const api = axiosFactory.create({
   baseURL: urlBase + '/',
   //   withCredentials: true,

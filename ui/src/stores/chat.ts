@@ -1,8 +1,8 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
-import type { User, Message, Opcode, GatewayPayloadStructure, Channel, EventName, Event, GuildMember } from '@satorijs/protocol'
-import type { APIChannelCreateResp, APIChannelListResp, APIMessage } from '@/types';
+import type { User, Opcode, GatewayPayloadStructure, Channel, EventName, Event, GuildMember } from '@satorijs/protocol'
+import type { APIChannelCreateResp, APIChannelListResp, APIMessage, SatoriMessage } from '@/types';
 import { nanoid } from 'nanoid'
 import { groupBy } from 'lodash-es';
 import { Emitter } from '@/utils/event';
@@ -20,13 +20,19 @@ interface ChatState {
   curMember: GuildMember | null,
   connectState: 'connecting' | 'connected' | 'disconnected' | 'reconnecting',
   iReconnectAfterTime: number,
-  curReplyTo: Message | null;
+  curReplyTo: SatoriMessage | null; // Message 会报错
 
   messageMenu: {
     show: boolean
     optionsComponent: MenuOptions
-    item: Message | null
+    item: SatoriMessage | null
     hasImage: boolean
+  },
+
+  avatarMenu: {
+    show: boolean,
+    optionsComponent: MenuOptions,
+    item: SatoriMessage | null
   }
 }
 
@@ -46,7 +52,7 @@ export const useChatStore = defineStore({
   state: (): ChatState => ({
     // user: { id: '1', },
     subject: null,
-    channelTree: [],
+    channelTree: [] as any,
     curChannel: null,
     curMember: null,
     connectState: 'connecting',
@@ -65,7 +71,19 @@ export const useChatStore = defineStore({
       } as MenuOptions,
       item: null,
       hasImage: false
-    }
+    },
+    avatarMenu: {
+      show: false,
+      optionsComponent: {
+        iconFontClass: 'iconfont',
+        customClass: "class-a",
+        zIndex: 3,
+        minWidth: 230,
+        x: 500,
+        y: 200,
+      } as MenuOptions,
+      item: null,
+    },
   }),
 
   getters: {

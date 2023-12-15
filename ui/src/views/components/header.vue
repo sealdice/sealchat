@@ -55,11 +55,11 @@ const options = computed(() => [
     ]
     // icon: renderIcon(UserIcon)
   },
-  {
-    label: t('headerMenu.notice'),
-    key: 'notice',
-    // icon: renderIcon(UserIcon)
-  },
+  // {
+  //   label: t('headerMenu.notice'),
+  //   key: 'notice',
+  //   // icon: renderIcon(UserIcon)
+  // },
   {
     label: t('headerMenu.logout'),
     key: 'logout',
@@ -170,7 +170,7 @@ const newChannel = async () => {
       <span class="text-sm font-bold sm:text-xl">{{ $t('headText') }}</span>
       <!-- <n-button>登录</n-button>
       <n-button>切换房间</n-button> -->
-      <span class="ml-4">
+      <span class="ml-4 hidden">
         <n-dropdown trigger="click" :options="chOptions" @select="channelSelect">
           <!-- <n-button>{{ chat.curChannel?.name || '加载中 ...' }}</n-button> -->
           <n-button text v-if="(chat.curChannel?.type === 3 || (chat.curChannel as any)?.isPrivate)">{{
@@ -206,12 +206,6 @@ const newChannel = async () => {
       </span> -->
     </div>
   </div>
-
-  <n-modal v-model:show="showModal" preset="dialog" :title="$t('dialoChannelgNew.title')"
-    :positive-text="$t('dialoChannelgNew.positiveText')" :negative-text="$t('dialoChannelgNew.negativeText')"
-    @positive-click="newChannel">
-    <n-input v-model:value="newChannelName"></n-input>
-  </n-modal>
 
   <div v-if="userProfileShow" style="background-color: var(--n-color); margin-left: -1.5rem;"
     class="absolute flex justify-center items-center w-full h-full pointer-events-none z-10">

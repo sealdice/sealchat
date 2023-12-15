@@ -119,7 +119,7 @@ func ChannelList(userId string) []*ChannelModel {
 	var uItems []*UserModel
 	db.Where("id in ?", uids).Find(&uItems)
 	for _, i := range uItems {
-		uid2channel[i.ID].Name = fmt.Sprintf("@%s", i.Nickname)
+		uid2channel[i.ID].Name = fmt.Sprintf("%s", i.Nickname)
 	}
 
 	return items2

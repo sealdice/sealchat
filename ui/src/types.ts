@@ -1,4 +1,18 @@
-import type { User, Message, Opcode, GatewayPayloadStructure, Channel } from '@satorijs/protocol'
+import type { User, Message, Guild, GuildMember, Opcode, GatewayPayloadStructure, Channel } from '@satorijs/protocol'
+
+export interface SatoriMessage {
+  id?: string;
+  channel?: Channel;
+  guild?: Guild;
+  user?: User;
+  member?: GuildMember;
+  content?: string;
+  elements?: any[]; // Element[] 这个好像会让vscode提示一个错误
+  timestamp?: number;
+  quote?: SatoriMessage;
+  createdAt?: number;
+  updatedAt?: number;
+}
 
 export interface ServerConfig {
   serveAt: string;

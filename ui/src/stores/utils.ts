@@ -4,6 +4,7 @@ import { Howl, Howler } from 'howler';
 
 import axiosFactory from "axios"
 import { cloneDeep } from "lodash-es";
+import { useWindowSize } from '@vueuse/core'
 
 import type { AxiosResponse } from "axios";
 import { api } from "./_config";
@@ -21,6 +22,7 @@ interface UtilsState {
   botCommands: { [key: string]: any };
   sounds: Map<string, SoundItem>;
   soundsTimer: any;
+  pageWidth: any;
 }
 
 export const useUtilsStore = defineStore({
@@ -31,6 +33,7 @@ export const useUtilsStore = defineStore({
     botCommands: {} as any,
     sounds: new Map<string, SoundItem>(),
     soundsTimer: null,
+    pageWidth: useWindowSize().width,
   }),
 
   getters: {
@@ -39,6 +42,13 @@ export const useUtilsStore = defineStore({
         return state.config.imageSizeLimit * 1024;
       }
       return 2 * 1024 * 1024
+    },
+
+    isSmallPage: (state) => {
+      if (state.pageWidth < 700) {
+        return true;
+      }
+      return false;
     }
   },
 

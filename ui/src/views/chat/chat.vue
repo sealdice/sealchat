@@ -1,6 +1,4 @@
 <script setup lang="tsx">
-import dayjs from 'dayjs';
-import imgAvatar from '@/assets/head2.png'
 import ChatItem from './components/chat-item.vue';
 import { computed, ref, watch, h, onMounted, onBeforeMount, nextTick, type Component, inject } from 'vue'
 import { VirtualList } from 'vue-tiny-virtual-list';
@@ -19,9 +17,11 @@ import AvatarVue from '@/components/avatar.vue';
 import { Howl, Howler } from 'howler';
 import SoundMessageCreated from '@/assets/message.mp3';
 import RightClickMenu from './components/ChatRightClickMenu.vue'
+import AvatarClickMenu from './components/AvatarClickMenu.vue'
 import { nanoid } from 'nanoid';
 import { useUtilsStore } from '@/stores/utils';
 import { contentEscape } from '@/utils/tools'
+import IconNumber from '@/components/icons/IconNumber.vue'
 
 const uploadImages = useObservable<Thumb[]>(
   liveQuery(() => db.thumbs.toArray()) as any
@@ -138,6 +138,8 @@ const scrollToBottom = () => {
 }
 
 const utils = useUtilsStore();
+
+const emit = defineEmits(['drawer-show'])
 
 let firstLoad = false;
 onMounted(async () => {
@@ -450,19 +452,6 @@ const avatarLongpress = (data: any) => {
     textInputRef.value?.focus();
   }
 }
-
-const avatarClick = async (data: any) => {
-  if (data.user) {
-    if (data.user.id === user.info.id) return;
-    const ch = await chat.channelPrivateCreate(data.user.id);
-    if (ch?.channel?.id) {
-      await chat.channelList()
-      nextTick(async () => {
-        await chat.channelSwitchTo(ch.channel.id);
-      })
-    }
-  }
-}
 </script>
 
 <template>
@@ -473,7 +462,7 @@ const avatarClick = async (data: any) => {
       <template v-for="itemData in rows" :key="itemData.id">
         <chat-item :avatar="itemData.member?.avatar || itemData.user?.avatar" :username="itemData.member?.nick || '小海豹'"
           :content="itemData.content" :is-rtl="isMe(itemData)" :item="itemData"
-          @avatar-longpress="avatarLongpress(itemData)" @avatar-click="avatarClick(itemData)" />
+          @avatar-longpress="avatarLongpress(itemData)" />
       </template>
 
       <!-- <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"
@@ -484,7 +473,7 @@ const avatarClick = async (data: any) => {
               </template>
             </VirtualList> -->
     </div>
-    <div v-if="rows.length === 0" class="flex h-full items-center justify-center text-gray-400">说点什么吧</div>
+    <div v-if="rows.length === 0" class="flex h-full items-center text-2xl justify-center text-gray-400">说点什么吧</div>
 
     <div style="right: 20px ;bottom: 70px;" class=" fixed" v-if="showButton">
       <n-button size="large" circle color="#e5e7eb" @click="toBottom">
@@ -498,6 +487,18 @@ const avatarClick = async (data: any) => {
 
     <!-- flex-grow -->
     <div class="edit-area flex justify-between space-x-2 my-2 px-2 relative">
+
+      <!-- 左下，快捷指令栏 -->
+      <div class="absolute  px-4 py-2" style="top: -2.7rem; left: 0rem" v-if="true">
+        <div class="bg-white">
+          <n-button @click="emit('drawer-show')" size="small" v-if="utils.isSmallPage">
+            <template #icon>
+              <n-icon :component="IconNumber"></n-icon>
+            </template>
+          </n-button>
+        </div>
+      </div>
+
       <div class="absolute bg-sky-300 rounded px-4 py-2" style="top: -4rem; right: 1rem" v-if="chat.curReplyTo">
         正在回复: {{ chat.curReplyTo.member?.nick }}
         <n-button @click="chat.curReplyTo = null">取消</n-button>
@@ -552,6 +553,7 @@ const avatarClick = async (data: any) => {
   </div>
 
   <RightClickMenu />
+  <AvatarClickMenu />
   <upload-support ref="uploadSupportRef" />
 </template>
 

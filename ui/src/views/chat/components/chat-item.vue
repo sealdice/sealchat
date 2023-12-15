@@ -8,6 +8,7 @@ import { useUserStore } from '@/stores/user';
 import { useChatStore } from '@/stores/chat';
 import { useUtilsStore } from '@/stores/utils';
 import { Howl, Howler } from 'howler';
+import { useMessage } from 'naive-ui';
 
 const user = useUserStore();
 const chat = useChatStore();
@@ -18,6 +19,12 @@ function timeFormat(time?: string) {
   // console.log('???', time, typeof time)
   // return dayjs(time).format('MM-DD HH:mm:ss');
   return dayjs(time).fromNow();
+}
+
+function timeFormat2(time?: string) {
+  if (!time) return '未知';
+  // console.log('???', time, typeof time)
+  return dayjs(time).format('YYYY-MM-DD HH:mm:ss');
 }
 
 let hasImage = ref(false);
@@ -113,6 +120,7 @@ const props = defineProps({
 })
 
 const timeText = ref(timeFormat(props.item?.createdAt));
+const timeText2 = ref(timeFormat2(props.item?.createdAt));
 
 const onContextMenu = (e: MouseEvent, item: any) => {
   e.preventDefault();
@@ -126,11 +134,26 @@ const onContextMenu = (e: MouseEvent, item: any) => {
   chat.messageMenu.hasImage = hasImage.value;
 }
 
+const message = useMessage()
+const doAvatarClick = (e: MouseEvent) => {
+  if (!props.item?.member?.nick) {
+    message.warning('此用户无法查看')
+    return;
+  }
+  chat.avatarMenu.show = true;
+
+  chat.messageMenu.optionsComponent.x = e.x;
+  chat.messageMenu.optionsComponent.y = e.y;
+  chat.avatarMenu.item = props.item as any;
+  emit('avatar-click')
+}
+
 const emit = defineEmits(['avatar-longpress', 'avatar-click']);
 
 onMounted(() => {
   setInterval(() => {
     timeText.value = timeFormat(props.item?.createdAt);
+    timeText2.value = timeFormat2(props.item?.createdAt);
   }, 10000);
 })
 </script>
@@ -139,16 +162,27 @@ onMounted(() => {
   <div v-if="item?.is_revoked" class="py-4 text-center">一条消息已被撤回</div>
   <div v-else :id="item?.id" class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}"
     :class="props.isRtl ? ['is-rtl'] : []" :key="key">
-    <avatar :src="props.avatar" @longpress="emit('avatar-longpress')" @click="emit('avatar-click')" />
+    <avatar :src="props.avatar" @longpress="emit('avatar-longpress')" @click="doAvatarClick" />
     <!-- <img class="rounded-md w-12 h-12 border-gray-500 border" :src="props.avatar" /> -->
     <!-- <n-avatar :src="imgAvatar" size="large" bordered>海豹</n-avatar> -->
     <div class="right">
       <span class="title">
-        <span v-if="props.isRtl" class="time">{{ timeText }}</span>
-        <span v-if="props.isRtl" class="name">{{ props.item?.member.nick }}</span>
-        <!-- <span class="name">{{ props.username }}</span> -->
-        <span v-if="!props.isRtl" class="name">{{ props.item?.member.nick }}</span>
-        <span v-if="!props.isRtl" class="time">{{ timeText }}</span>
+        <!-- 右侧 -->
+        <n-popover trigger="hover" placement="bottom" v-if="props.isRtl">
+          <template #trigger>
+            <span class="time">{{ timeText }}</span>
+          </template>
+          <span>{{ timeText2 }}</span>
+        </n-popover>
+        <span v-if="props.isRtl" class="name">{{ props.item?.member?.nick }}</span>
+
+        <span v-if="!props.isRtl" class="name">{{ props.item?.member?.nick || '小海豹' }}</span>
+        <n-popover trigger="hover" placement="bottom" v-if="!props.isRtl">
+          <template #trigger>
+            <span class="time">{{ timeText }}</span>
+          </template>
+          <span>{{ timeText2 }}</span>
+        </n-popover>
 
         <!-- <span v-if="props.isRtl" class="time">{{ timeText }}</span> -->
         <span v-if="props.item?.user?.is_bot || props.item?.user_id?.startsWith('BOT:')"

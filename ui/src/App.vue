@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
 import { zhCN, dateZhCN, jaJP, dateJaJP } from 'naive-ui'
 import { darkTheme } from 'naive-ui'
 import { NConfigProvider, NMessageProvider, NDialogProvider } from 'naive-ui'

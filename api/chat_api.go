@@ -18,7 +18,6 @@ import (
 )
 
 func apiChannelCreate(c *WsSyncConn, msg []byte, echo string) {
-	db := model.GetDB()
 	data := struct {
 		// guild_id 字段无意义，因为不可能由客户端提交
 		Data protocol.Channel `json:"data"`
@@ -28,11 +27,7 @@ func apiChannelCreate(c *WsSyncConn, msg []byte, echo string) {
 		return
 	}
 
-	m := model.ChannelModel{}
-	m.ID = gonanoid.Must()
-	m.Name = data.Data.Name
-
-	db.Create(&m)
+	m := model.ChannelPublicNew(gonanoid.Must(), data.Data.Name)
 
 	_ = c.WriteJSON(struct {
 		Channel *protocol.Channel `json:"channel"`
