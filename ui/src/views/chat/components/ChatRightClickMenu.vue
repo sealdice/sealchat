@@ -28,19 +28,39 @@ const clickDelete = async () => {
   }
 }
 
+const clickCopy = async () => {
+  let copyText = '';
+  const items = Element.parse(chat.messageMenu.item?.content || '');
+  for (let item of items) {
+    if (item.type == 'text') {
+      copyText += item.toString();
+    }
+  }
+
+  try {
+    // 执行复制操作
+    await navigator.clipboard.writeText(copyText);
+    message.success("已复制");
+  } catch (err) {
+    console.error('复制失败');
+  }
+}
+
 const addToMyEmoji = async () => {
   const items = Element.parse(chat.messageMenu.item?.content || '');
   for (let item of items) {
     if (item.type == "img") {
       const id = item.attrs.src.replace('id:', '');
       try {
-        await db.thumbs.add({
-          id: id,
-          recentUsed: Number(Date.now()),
-          filename: 'image.png',
-          mimeType: '',
-          data: null, // 无数据，按id加载
-        });
+        const resp = await user.emojiAdd(id);
+        console.log(222, resp);
+        // await db.thumbs.add({
+        //   id: id,
+        //   recentUsed: Number(Date.now()),
+        //   filename: 'image.png',
+        //   mimeType: '',
+        //   data: null, // 无数据，按id加载
+        // });
         message.success('收藏成功');
       } catch (e: any) {
         if (e.name === "ConstraintError") {
@@ -58,6 +78,7 @@ const addToMyEmoji = async () => {
     <!-- <context-menu-sperator /> -->
     <!-- <context-menu-item label="Item with a icon" icon="icon-reload-1" @click="alertContextMenuItemClicked('Item2')" /> -->
     <!-- <context-menu-item label="Test Item" @click="alertContextMenuItemClicked('Item2')" /> -->
+    <context-menu-item v-if="!chat.messageMenu.hasImage" label="复制内容" @click="clickCopy" />
     <context-menu-item label="回复" @click="clickReplyTo" />
     <context-menu-item label="撤回" @click="clickDelete"
       v-if="chat.messageMenu.item?.user?.id && (chat.messageMenu.item?.user?.id === user.info.id)" />

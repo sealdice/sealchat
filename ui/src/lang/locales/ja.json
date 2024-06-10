@@ -12,7 +12,7 @@
     "placeholder": "入力してください...",
     "send": "送信",
     "upload": "画像をアップロード",
-    "emojiTitle": "絵文字（現在のデバイスのみ）"
+    "emojiTitle": "絵文字"
   },
   "connectState": {
     "connecting": "接続中...",

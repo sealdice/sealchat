@@ -3,7 +3,8 @@ package model
 import (
 	"encoding/hex"
 	"encoding/json"
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"sealchat/utils"
+
 	"gorm.io/gorm"
 )
 
@@ -28,6 +29,6 @@ func (*Attachment) TableName() string {
 
 func AttachmentCreate(at *Attachment) (tx *gorm.DB) {
 	db := GetDB()
-	at.ID = gonanoid.Must()
+	at.ID = utils.NewID()
 	return db.Create(at)
 }

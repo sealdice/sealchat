@@ -56,7 +56,7 @@ export const useUtilsStore = defineStore({
     async soundsTryInit() {
       if (this.soundsTimer) return;
       this.soundsTimer = setInterval(() => {
-        for (let [k,v] of this.sounds.entries()) {
+        for (let [k, v] of this.sounds.entries()) {
           v.time = v.sound.seek();
         }
       }, 1000);
@@ -73,7 +73,7 @@ export const useUtilsStore = defineStore({
 
     async botTokenList() {
       const user = useUserStore();
-      const resp = await api.get('api/v1/bot_token/list', {
+      const resp = await api.get('api/v1/bot_token-list', {
         headers: { 'Authorization': user.token }
       })
       return resp
@@ -81,7 +81,7 @@ export const useUtilsStore = defineStore({
 
     async botTokenAdd(name: string) {
       const user = useUserStore();
-      const resp = await api.post('api/v1/bot_token/add', { name }, {
+      const resp = await api.post('api/v1/bot_token-add', { name }, {
         headers: { 'Authorization': user.token }
       })
       return resp
@@ -89,8 +89,9 @@ export const useUtilsStore = defineStore({
 
     async botTokenDelete(id: string) {
       const user = useUserStore();
-      const resp = await api.delete(`api/v1/bot_token/${id}`, {
-        headers: { 'Authorization': user.token }
+      const resp = await api.post(`api/v1/bot_token-delete`, {}, {
+        headers: { 'Authorization': user.token },
+        params: { id },
       })
       return resp
     },

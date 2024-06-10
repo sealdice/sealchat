@@ -1,9 +1,10 @@
 package model
 
 import (
-	gonanoid "github.com/matoous/go-nanoid/v2"
-	"sealchat/protocol"
 	"time"
+
+	"sealchat/protocol"
+	"sealchat/utils"
 )
 
 type MemberModel struct {
@@ -44,7 +45,7 @@ func MemberGetByUserIDAndChannelIDBase(userId string, channelId string, defaultN
 	if err != nil {
 		// 未找到记录，尝试创建新的记录
 		if createIfNotExists {
-			x := MemberModel{StringPKBaseModel: StringPKBaseModel{ID: gonanoid.Must()}, UserID: userId, ChannelID: channelId, Nickname: defaultName}
+			x := MemberModel{StringPKBaseModel: StringPKBaseModel{ID: utils.NewID()}, UserID: userId, ChannelID: channelId, Nickname: defaultName}
 			err = db.Create(&x).Error
 			return &x, err
 		}

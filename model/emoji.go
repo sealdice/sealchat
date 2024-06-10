@@ -1,6 +1,8 @@
 package model
 
-import gonanoid "github.com/matoous/go-nanoid/v2"
+import (
+	"sealchat/utils"
+)
 
 type UserEmojiModel struct {
 	StringPKBaseModel
@@ -16,7 +18,7 @@ func (*UserEmojiModel) TableName() string {
 func UserEmojiCreate(userId string, attachmentId string) error {
 	return db.Create(&UserEmojiModel{
 		StringPKBaseModel: StringPKBaseModel{
-			ID: gonanoid.Must(),
+			ID: utils.NewID(),
 		},
 		UserID:       userId,
 		AttachmentID: attachmentId,

@@ -8,7 +8,7 @@ import (
 )
 
 type AppConfig struct {
-	ServeAt                   string `json:"serveAt" yaml:"serveAt"`
+	ServeAt                   string `json:"-" yaml:"serveAt"`
 	Domain                    string `json:"domain" yaml:"domain"`
 	RegisterOpen              bool   `json:"registerOpen" yaml:"registerOpen"`
 	WebUrl                    string `json:"webUrl" yaml:"webUrl"`

@@ -1,16 +1,17 @@
 package api
 
 import (
-	"github.com/gofiber/fiber/v2"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	"net/http"
-	"sealchat/model"
+	"sealchat/utils"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"sealchat/model"
 )
 
 func BotTokenList(c *fiber.Ctx) error {
-	//page := c.QueryInt("page", 1)
-	//pageSize := c.QueryInt("pageSize", 20)
+	// page := c.QueryInt("page", 1)
+	// pageSize := c.QueryInt("pageSize", 20)
 	db := model.GetDB()
 
 	var total int64
@@ -18,18 +19,18 @@ func BotTokenList(c *fiber.Ctx) error {
 
 	// 获取列表
 	var items []model.BotTokenModel
-	//offset := (page - 1) * pageSize
+	// offset := (page - 1) * pageSize
 	db.Order("created_at asc").
-		//Offset(offset).Limit(pageSize).
-		//Preload("User", func(db *gorm.DB) *gorm.DB {
+		// Offset(offset).Limit(pageSize).
+		// Preload("User", func(db *gorm.DB) *gorm.DB {
 		//	return db.Select("id, username")
-		//}).
+		// }).
 		Find(&items)
 
 	// 返回JSON响应
 	return c.JSON(fiber.Map{
-		//"page":     page,
-		//"pageSize": pageSize,
+		// "page":     page,
+		// "pageSize": pageSize,
 		"total": total,
 		"items": items,
 	})
@@ -48,14 +49,14 @@ func BotTokenAdd(c *fiber.Ctx) error {
 
 	db := model.GetDB()
 
-	uid := gonanoid.Must()
+	uid := utils.NewID()
 	// 创建一个永不可能登录的用户
 	user := &model.UserModel{
 		StringPKBaseModel: model.StringPKBaseModel{
 			ID: uid,
 		},
 		Role:     "",
-		Username: gonanoid.Must(),
+		Username: utils.NewID(),
 		Nickname: data.Name,
 		Password: "",
 		Salt:     "BOT_SALT",
@@ -71,7 +72,7 @@ func BotTokenAdd(c *fiber.Ctx) error {
 			ID: uid,
 		},
 		Name:      data.Name,
-		Token:     gonanoid.Must(32),
+		Token:     utils.NewIDWithLength(32),
 		ExpiresAt: time.Now().UnixMilli() + 3*365*24*60*60*1e3, // 3 years
 	}
 

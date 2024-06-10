@@ -1,10 +1,11 @@
 package api
 
 import (
+	"time"
+
 	"sealchat/model"
 	"sealchat/protocol"
 	"sealchat/utils"
-	"time"
 )
 
 type ChatContext struct {

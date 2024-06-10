@@ -1,12 +1,13 @@
 package api
 
 import (
-	"github.com/samber/lo"
-	"github.com/spf13/afero"
-	"golang.org/x/crypto/blake2s"
 	"io"
 	"mime/multipart"
 	"sync"
+
+	"github.com/samber/lo"
+	"github.com/spf13/afero"
+	"golang.org/x/crypto/blake2s"
 )
 
 var copyBufPool = sync.Pool{

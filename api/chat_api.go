@@ -3,18 +3,18 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/samber/lo"
-	"gorm.io/gorm"
 	"net/http"
-	"sealchat/model"
-	"sealchat/protocol"
-	"sealchat/utils"
 	"strconv"
 	"strings"
 	"time"
 
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/samber/lo"
 	ds "github.com/sealdice/dicescript"
+	"gorm.io/gorm"
+
+	"sealchat/model"
+	"sealchat/protocol"
+	"sealchat/utils"
 )
 
 func apiChannelCreate(c *WsSyncConn, msg []byte, echo string) {
@@ -27,7 +27,7 @@ func apiChannelCreate(c *WsSyncConn, msg []byte, echo string) {
 		return
 	}
 
-	m := model.ChannelPublicNew(gonanoid.Must(), data.Data.Name)
+	m := model.ChannelPublicNew(utils.NewID(), data.Data.Name)
 
 	_ = c.WriteJSON(struct {
 		Channel *protocol.Channel `json:"channel"`
@@ -261,7 +261,7 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 
 	m := model.MessageModel{
 		StringPKBaseModel: model.StringPKBaseModel{
-			ID: gonanoid.Must(),
+			ID: utils.NewID(),
 		},
 		UserID:    ctx.User.ID,
 		ChannelID: data.Data.ChannelID,
@@ -327,7 +327,7 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 			} else {
 				sb := strings.Builder{}
 				sb.WriteString(fmt.Sprintf("算式: %s\n", expr))
-				sb.WriteString(fmt.Sprintf("过程: %s\n", vm.Detail))
+				sb.WriteString(fmt.Sprintf("过程: %s\n", vm.GetDetailText()))
 				sb.WriteString(fmt.Sprintf("结果: %s\n", vm.Ret.ToString()))
 				sb.WriteString(fmt.Sprintf("栈顶: %d 层数:%d 算力: %d\n", vm.StackTop(), vm.Depth(), vm.NumOpCount))
 				sb.WriteString(fmt.Sprintf("注: 这是一只小海豹，只有基本骰点功能，完整功能请接入海豹核心"))
@@ -336,7 +336,7 @@ func apiMessageCreate(ctx *ChatContext, msg []byte) {
 
 			m := model.MessageModel{
 				StringPKBaseModel: model.StringPKBaseModel{
-					ID: gonanoid.Must(),
+					ID: utils.NewID(),
 				},
 				UserID:    "BOT:1000",
 				ChannelID: data.Data.ChannelID,
@@ -572,7 +572,7 @@ func apiBotChannelMemberSetName(ctx *ChatContext, msg []byte) {
 			Name      string `json:"name"`
 			ChannelId string `json:"channel_id"`
 			UserId    string `json:"user_id"`
-			//Brief string `json:"brief"`
+			// Brief string `json:"brief"`
 		} `json:"data"`
 	}{}
 	err := json.Unmarshal(msg, &data)

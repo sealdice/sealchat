@@ -3,9 +3,11 @@ package api
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/afero"
 	"modernc.org/libc/limits"
+
 	"sealchat/model"
 )
 
@@ -31,10 +33,10 @@ func Upload(c *fiber.Ctx) error {
 
 	// 遍历每个文件
 	for _, file := range files {
-		//f, err := appFs.Open("./assets/" + file.Filename + ".upload")
-		//if err != nil {
+		// f, err := appFs.Open("./assets/" + file.Filename + ".upload")
+		// if err != nil {
 		//	return err
-		//}
+		// }
 		_ = appFs.MkdirAll(tmpDir, 0755)
 		_ = appFs.MkdirAll(uploadDir, 0755)
 

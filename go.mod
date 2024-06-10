@@ -12,7 +12,7 @@ require (
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mikespook/gorbac v2.3.0+incompatible
 	github.com/samber/lo v1.38.1
-	github.com/sealdice/dicescript v0.0.0-20231102165212-053ea0992846
+	github.com/sealdice/dicescript v0.0.0-20240608121936-655f62cd6bb0
 	github.com/spf13/afero v1.10.0
 	golang.org/x/crypto v0.15.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -32,13 +32,14 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/orisano/wyhash v1.1.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/savsgio/gotils v0.0.0-20230208104028-c358bd845dee // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.50.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
+	golang.org/x/exp v0.0.0-20240604190554-fc45aab8b7f8 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

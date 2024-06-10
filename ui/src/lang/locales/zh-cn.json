@@ -12,7 +12,7 @@
     "placeholder": "请输入...",
     "send": "发送",
     "upload": "上传图片",
-    "emojiTitle": "表情(仅当前设备)"
+    "emojiTitle": "表情"
   },
   "connectState": {
     "connecting": "连接中 ...",

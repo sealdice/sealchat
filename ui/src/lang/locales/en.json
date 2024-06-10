@@ -12,7 +12,7 @@
     "placeholder": "type here...",
     "send": "Send",
     "upload": "upload image",
-    "emojiTitle": "Emoji (this device only)"
+    "emojiTitle": "Emoji"
   },
   "connectState": {
     "connecting": "Connecting...",

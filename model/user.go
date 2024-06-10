@@ -5,12 +5,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt"
-	"golang.org/x/crypto/blake2s"
-	"sealchat/protocol"
 	"time"
 
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"golang.org/x/crypto/blake2s"
+
+	"sealchat/protocol"
+	"sealchat/utils"
 )
 
 // UserModel 用户表
@@ -26,6 +26,7 @@ type UserModel struct {
 	Salt     string `gorm:"not null" json:"-"`                    // 盐，非空
 	IsBot    bool   `gorm:"null" json:"is_bot"`                   // 是否是机器人
 
+	AccessToken *AccessTokenModel `gorm:"-" json:"-"`
 	// Token          string `gorm:"index" json:"token"` // 令牌
 	// TokenExpiresAt int64  `json:"expiresAt"`
 	// RecentSentAt int64 `json:"recentSentAt"` // 最近发送消息的时间
@@ -55,9 +56,8 @@ func (u *UserModel) SaveInfo() {
 // AccessTokenModel access_token表
 type AccessTokenModel struct {
 	StringPKBaseModel
-	UserID    string    `gorm:"not null"`             // 用户ID，非空
-	Token     string    `gorm:"uniqueIndex;not null"` // token，唯一，非空
-	ExpiredAt time.Time `gorm:"not null"`             // 过期时间，非空
+	UserID    string    `json:"userID" gorm:"not null"`    // 用户ID，非空
+	ExpiredAt time.Time `json:"expiredAt" gorm:"not null"` // 过期时间，非空
 }
 
 func (*AccessTokenModel) TableName() string {
@@ -108,100 +108,11 @@ func UserCreate(username, password string, nickname string) (*UserModel, error) 
 		Password: hashedPassword,
 		Salt:     salt,
 	}
-	user.ID = gonanoid.Must()
+	user.ID = utils.NewID()
 	if err := db.Create(user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
-}
-
-// 登录认证
-func UserAuthenticate(username, password string) (*UserModel, error) {
-	var user UserModel
-	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
-		return nil, err
-	}
-	hashedPassword, err := hashPassword(password, user.Salt)
-	if err != nil {
-		return nil, err
-	}
-	if hashedPassword != user.Password {
-		return nil, errors.New("密码错误")
-	}
-	return &user, nil
-}
-
-var JWT_KEY = []byte("sc-jwt_secret")
-
-func AcessTokenDeleteAllByUserID(userID string) error {
-	return db.Where("user_id = ?", userID).Delete(&AccessTokenModel{}).Error
-}
-
-// 生成 access_token
-func UserGenerateAccessToken(userID string) (string, error) {
-	expiredAt := time.Now().Add(time.Duration(15*24) * time.Hour)
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID": userID,
-		"exp":    expiredAt.Unix(),
-	})
-	signedToken, err := token.SignedString(JWT_KEY)
-	if err != nil {
-		return "", err
-	}
-	accessToken := &AccessTokenModel{
-		UserID:    userID,
-		Token:     signedToken,
-		ExpiredAt: expiredAt,
-	}
-	accessToken.ID = gonanoid.Must()
-	if err := db.Create(accessToken).Error; err != nil {
-		return "", err
-	}
-	return signedToken, nil
-}
-
-// 验证 access_token 是否有效
-func UserVerifyAccessToken(tokenString string) (*UserModel, error) {
-	// 解析 token
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// 验证签名方法
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-		// 返回用于签名的密钥
-		return []byte(JWT_KEY), nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// 获取 token 中的用户 ID
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return nil, fmt.Errorf("Invalid token")
-	}
-
-	userID, ok := claims["userID"].(string)
-	if !ok {
-		return nil, fmt.Errorf("Invalid user ID")
-	}
-
-	// 查询用户
-	var user UserModel
-	if err := db.Where("id = ?", userID).First(&user).Error; err != nil {
-		return nil, fmt.Errorf("UserModel not found")
-	}
-
-	// 验证 token 是否过期
-	expirationTime, ok := claims["exp"].(float64)
-	if !ok {
-		return nil, fmt.Errorf("Invalid token expiration time")
-	}
-	if time.Now().Unix() > int64(expirationTime) {
-		return nil, fmt.Errorf("Token expired")
-	}
-
-	return &user, nil
 }
 
 // 修改密码
@@ -225,4 +136,97 @@ func UserUpdatePassword(userID string, newPassword string) error {
 		return err
 	}
 	return nil
+}
+
+// 登录认证
+func UserAuthenticate(username, password string) (*UserModel, error) {
+	var user UserModel
+	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
+		return nil, err
+	}
+	hashedPassword, err := hashPassword(password, user.Salt)
+	if err != nil {
+		return nil, err
+	}
+	if hashedPassword != user.Password {
+		return nil, errors.New("密码错误")
+	}
+	return &user, nil
+}
+
+func AcessTokenDeleteAllByUserID(userID string) error {
+	return db.Where("user_id = ?", userID).Delete(&AccessTokenModel{}).Error
+}
+
+// UserGenerateAccessToken 生成 access_token
+func UserGenerateAccessToken(userID string) (string, error) {
+	expiredAt := time.Now().Add(time.Duration(15*24) * time.Hour)
+
+	token := utils.NewID()
+	accessToken := &AccessTokenModel{
+		UserID:    userID,
+		ExpiredAt: expiredAt,
+	}
+
+	accessToken.ID = token
+	signedToken := TokenSign(accessToken.ID, expiredAt)
+	if err := db.Create(accessToken).Error; err != nil {
+		return "", err
+	}
+	return signedToken, nil
+}
+
+// UserVerifyAccessToken 验证 access_token 是否有效
+func UserVerifyAccessToken(tokenString string) (*UserModel, error) {
+	// 解析 token
+	ret := TokenCheck(tokenString)
+
+	if !ret.HashValid {
+		return nil, ErrInvalidToken
+	}
+
+	if !ret.TimeValid {
+		return nil, ErrTokenExpired
+	}
+
+	var accessToken AccessTokenModel
+	if err := db.Where("id = ?", ret.Token).First(&accessToken).Error; err != nil {
+		return nil, ErrInvalidToken
+	}
+
+	if accessToken.ID == "" {
+		return nil, ErrInvalidToken
+	}
+
+	now := time.Now()
+	if accessToken.ExpiredAt.Compare(now) <= 0 {
+		// 二次过期时间校验
+		return nil, ErrInvalidToken
+	}
+
+	// 查询用户
+	var user UserModel
+	if err := db.Where("id = ?", accessToken.UserID).First(&user).Error; err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	user.AccessToken = &accessToken
+	return &user, nil
+}
+
+// UserRefreshAccessToken 刷新 access_token
+func UserRefreshAccessToken(tokenID string) (string, error) {
+	expiredAt := time.Now().Add(time.Duration(15*24) * time.Hour)
+
+	var accessToken AccessTokenModel
+	if err := db.Where("id = ?", tokenID).First(&accessToken).Error; err != nil {
+		return "", ErrInvalidToken
+	}
+
+	if err := db.Model(&AccessTokenModel{}).Update("expired_at", expiredAt).Error; err != nil {
+		return "", fmt.Errorf("update failed")
+	}
+
+	signedToken := TokenSign(accessToken.ID, expiredAt)
+	return signedToken, nil
 }

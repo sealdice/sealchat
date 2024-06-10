@@ -1,33 +1,29 @@
 package model
 
 import (
-	"github.com/glebarez/sqlite"
-	gonanoid "github.com/matoous/go-nanoid/v2"
-	"gorm.io/gorm"
 	"time"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+
+	"sealchat/utils"
 )
 
 var db *gorm.DB
 
-type BaseModel struct {
-	ID        uint64     `gorm:"primary_key;autoIncrement" json:"id"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `sql:"index" json:"deletedAt"`
-}
-
 type StringPKBaseModel struct {
 	ID        string     `gorm:"primary_key" json:"id"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `sql:"index" json:"deletedAt"`
+	CreatedAt time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt time.Time  `json:"updatedAt,omitempty"`
+	DeletedAt *time.Time `sql:"index" json:"deletedAt,omitempty"`
 }
 
-type BytePKBaseModel2 struct {
-	ID        []byte     `gorm:"primary_key" json:"id"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `sql:"index" json:"deletedAt"`
+func (m *StringPKBaseModel) Init() {
+	id := utils.NewID()
+	m.ID = id
+	m.CreatedAt = time.Now()
+	m.UpdatedAt = time.Now()
+	m.DeletedAt = nil
 }
 
 func DBInit() {
@@ -62,7 +58,7 @@ func DBInit() {
 		for _, i := range items {
 			db.Create(&ChannelPermModel{
 				StringPKBaseModel: StringPKBaseModel{
-					ID: gonanoid.Must(),
+					ID: utils.NewID(),
 				},
 				ChannelID: i.ID,
 				UserID:    ChannelPermUserALL,
@@ -76,15 +72,11 @@ func DBInit() {
 	if channelCount == 0 {
 		db.Create(&ChannelModel{
 			StringPKBaseModel: StringPKBaseModel{
-				ID: gonanoid.Must(),
+				ID: utils.NewID(),
 			},
 			Name: "默认",
 		})
 	}
-}
-
-func InitTestDB() *gorm.DB {
-	return db
 }
 
 func GetDB() *gorm.DB {

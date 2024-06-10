@@ -85,3 +85,9 @@ export interface APIChannelListResp {
 }
 
 export type APIMessage = APIMessageCreate | APIMessageGet | APIChannelList;
+
+export interface UserEmojiModel {
+  id: string
+  attachmentId: string;
+  order?: number;
+}

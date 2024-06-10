@@ -1,6 +1,8 @@
 package model
 
-import gonanoid "github.com/matoous/go-nanoid/v2"
+import (
+	"sealchat/utils"
+)
 
 type TimelineUserLastRecordModel struct {
 	StringPKBaseModel
@@ -44,7 +46,7 @@ func updateTimelineByMention(userId, lastBeMentionedId string) (string, bool) {
 	for _, i := range items {
 		newItems = append(newItems, &TimelineModel{
 			StringPKBaseModel: StringPKBaseModel{
-				ID: gonanoid.Must(),
+				ID: utils.NewID(),
 			},
 			Type:        "mention",
 			LocPostType: i.LocPostType,

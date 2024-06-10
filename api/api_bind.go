@@ -2,18 +2,19 @@ package api
 
 import (
 	_ "embed"
-	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"io/fs"
 	"log"
 	"net/http"
-	"sealchat/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/spf13/afero"
+
+	"sealchat/utils"
 )
 
 var appConfig *utils.AppConfig
@@ -58,6 +59,9 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	v1Auth.Post("/user/change_password", UserChangePassword)
 	v1Auth.Get("/user/info", UserInfo)
 	v1Auth.Put("/user/info", UserInfoUpdate)
+	v1Auth.Post("/user/emoji-add", UserEmojiAdd)
+	v1Auth.Get("/user/emoji-list", UserEmojiList)
+	v1Auth.Post("/user/emoji-delete", UserEmojiDelete)
 
 	v1Auth.Get("/timeline/list", TimelineList)
 
@@ -73,11 +77,10 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	})
 	v1Auth.Static("/attachments", "./data/upload")
 
-	v1AuthAdmin := v1Auth.Group("")
-	v1AuthAdmin.Use(UserRoleAdminMiddleware)
-	v1AuthAdmin.Get("/bot_token/list", BotTokenList)
-	v1AuthAdmin.Post("/bot_token/add", BotTokenAdd)
-	v1AuthAdmin.Delete("/bot_token/:id", BotTokenDelete)
+	v1AuthAdmin := v1Auth.Group("", UserRoleAdminMiddleware)
+	v1AuthAdmin.Get("/bot_token-list", BotTokenList)
+	v1AuthAdmin.Post("/bot_token-add", BotTokenAdd)
+	v1AuthAdmin.Post("/bot_token-delete", BotTokenDelete)
 	v1AuthAdmin.Get("/admin/user/list", AdminUserList)
 	v1AuthAdmin.Put("/admin/user/disable/:id", AdminUserDisable)
 	v1AuthAdmin.Put("/admin/user/enable/:id", AdminUserEnable)

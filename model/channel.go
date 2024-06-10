@@ -2,11 +2,13 @@ package model
 
 import (
 	"fmt"
-	gonanoid "github.com/matoous/go-nanoid/v2"
-	"github.com/samber/lo"
-	"sealchat/protocol"
 	"strings"
 	"time"
+
+	"github.com/samber/lo"
+
+	"sealchat/protocol"
+	"sealchat/utils"
 )
 
 type ChannelModel struct {
@@ -60,7 +62,7 @@ func (*ChannelPermModel) TableName() string {
 func ChannelPublicNew(channelID string, name string) *ChannelModel {
 	ch := &ChannelModel{StringPKBaseModel: StringPKBaseModel{ID: channelID}, Name: name}
 	db.Create(ch)
-	db.Create(&ChannelPermModel{StringPKBaseModel: StringPKBaseModel{ID: gonanoid.Must()}, ChannelID: channelID, UserID: ChannelPermUserALL})
+	db.Create(&ChannelPermModel{StringPKBaseModel: StringPKBaseModel{ID: utils.NewID()}, ChannelID: channelID, UserID: ChannelPermUserALL})
 	return ch
 }
 
@@ -80,8 +82,8 @@ func ChannelPrivateNew(userID1, userID2 string) (ch *ChannelModel, isNew bool) {
 	ch = &ChannelModel{StringPKBaseModel: StringPKBaseModel{ID: chId}, IsPrivate: true, Name: "@私聊频道"}
 
 	db.Create(ch)
-	db.Create(&ChannelPermModel{StringPKBaseModel: StringPKBaseModel{ID: gonanoid.Must()}, ChannelID: chId, UserID: userID1})
-	db.Create(&ChannelPermModel{StringPKBaseModel: StringPKBaseModel{ID: gonanoid.Must()}, ChannelID: chId, UserID: userID2})
+	db.Create(&ChannelPermModel{StringPKBaseModel: StringPKBaseModel{ID: utils.NewID()}, ChannelID: chId, UserID: userID1})
+	db.Create(&ChannelPermModel{StringPKBaseModel: StringPKBaseModel{ID: utils.NewID()}, ChannelID: chId, UserID: userID2})
 
 	return ch, true
 }

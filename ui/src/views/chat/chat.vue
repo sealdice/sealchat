@@ -22,10 +22,24 @@ import { nanoid } from 'nanoid';
 import { useUtilsStore } from '@/stores/utils';
 import { contentEscape } from '@/utils/tools'
 import IconNumber from '@/components/icons/IconNumber.vue'
+import { computedAsync } from '@vueuse/core';
+import type { UserEmojiModel } from '@/types';
 
-const uploadImages = useObservable<Thumb[]>(
-  liveQuery(() => db.thumbs.toArray()) as any
-)
+// const uploadImages = useObservable<Thumb[]>(
+//   liveQuery(() => db.thumbs.toArray()) as any
+// )
+
+const chat = useChatStore();
+const user = useUserStore();
+
+const emojiLoading = ref(false)
+const uploadImages = computedAsync(async () => {
+  if (user.emojiCount) {
+    const resp = await user.emojiList();
+    return resp.data.items;
+  }
+  return [];
+}, [], emojiLoading);
 
 const message = useMessage()
 const dialog = useDialog()
@@ -115,9 +129,6 @@ const toBottom = () => {
   scrollToBottom();
   showButton.value = false;
 }
-
-const chat = useChatStore();
-const user = useUserStore();
 
 const doUpload = () => {
   uploadSupportRef.value.openUpload();
@@ -442,8 +453,8 @@ const reachTop = throttle(async (evt: any) => {
   }
 }, 1000)
 
-const sendEmoji = throttle((i: Thumb) => {
-  chat.messageCreate(`<img src="id:${i.id}" />`)
+const sendEmoji = throttle((i: UserEmojiModel) => {
+  chat.messageCreate(`<img src="id:${i.attachmentId}" />`)
 }, 1000)
 
 const avatarLongpress = (data: any) => {

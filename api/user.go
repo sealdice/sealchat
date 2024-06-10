@@ -1,15 +1,17 @@
 package api
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"fmt"
 	"net/http"
 	"regexp"
-	"sealchat/model"
 	"strings"
+
+	"github.com/gofiber/fiber/v2"
+
+	"sealchat/model"
 )
 
 func SignCheckMiddleware(c *fiber.Ctx) error {
-	//token := c.Cookies("token")
 	var token string
 
 	tokens := c.GetReqHeaders()["Authorization"]
@@ -37,8 +39,8 @@ func SignCheckMiddleware(c *fiber.Ctx) error {
 	} else {
 		user, err = model.UserVerifyAccessToken(token)
 		if err != nil {
-			//fmt.Println(err.Error())
-			//return c.Redirect("http://127.0.0.1:4455/login", http.StatusMovedPermanently)
+			fmt.Println("xxxx", token, err.Error())
+			// return c.Redirect("http://127.0.0.1:4455/login", http.StatusMovedPermanently)
 			return c.Status(http.StatusUnauthorized).JSON(
 				fiber.Map{"message": "凭证错误，需要重新登录"},
 			)
@@ -50,14 +52,14 @@ func SignCheckMiddleware(c *fiber.Ctx) error {
 			fiber.Map{"message": "帐号被禁用"},
 		)
 	}
-	//if !*resp.Active {
+	// if !*resp.Active {
 	//	//return c.Redirect("http://127.0.0.1:4455/login", http.StatusMovedPermanently)
 	//	fmt.Println("过期了")
 	//	return &fiber.Error{
 	//		Code:    http.StatusUnauthorized,
 	//		Message: "凭证过期，需要重新登录",
 	//	}
-	//} else {
+	// } else {
 	c.Locals("user", user)
 
 	if isWriteCookie {
@@ -68,7 +70,7 @@ func SignCheckMiddleware(c *fiber.Ctx) error {
 		})
 	}
 
-	//}
+	// }
 	model.TimelineUpdate(user.ID)
 
 	return c.Next()
@@ -76,6 +78,7 @@ func SignCheckMiddleware(c *fiber.Ctx) error {
 
 func UserRoleAdminMiddleware(c *fiber.Ctx) error {
 	user := getCurUser(c)
+	fmt.Println("????", user.Role)
 	if user.Role != "role-admin" {
 		return c.Status(http.StatusForbidden).JSON(
 			fiber.Map{"message": "没有权限"},
@@ -320,8 +323,8 @@ func UserInfoUpdate(c *fiber.Ctx) error {
 }
 
 func AdminUserList(c *fiber.Ctx) error {
-	//page := c.QueryInt("page", 1)
-	//pageSize := c.QueryInt("pageSize", 20)
+	// page := c.QueryInt("page", 1)
+	// pageSize := c.QueryInt("pageSize", 20)
 	db := model.GetDB()
 
 	var total int64
@@ -329,18 +332,18 @@ func AdminUserList(c *fiber.Ctx) error {
 
 	// 获取列表
 	var items []model.UserModel
-	//offset := (page - 1) * pageSize
+	// offset := (page - 1) * pageSize
 	db.Order("created_at asc").
-		//Offset(offset).Limit(pageSize).
-		//Preload("User", func(db *gorm.DB) *gorm.DB {
+		// Offset(offset).Limit(pageSize).
+		// Preload("User", func(db *gorm.DB) *gorm.DB {
 		//	return db.Select("id, username")
-		//}).
+		// }).
 		Find(&items)
 
 	// 返回JSON响应
 	return c.JSON(fiber.Map{
-		//"page":     page,
-		//"pageSize": pageSize,
+		// "page":     page,
+		// "pageSize": pageSize,
 		"total": total,
 		"items": items,
 	})

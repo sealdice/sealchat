@@ -1,8 +1,9 @@
 package model
 
 import (
-	"sealchat/protocol"
 	"time"
+
+	"sealchat/protocol"
 )
 
 type MessageModel struct {
@@ -30,8 +31,8 @@ func (m *MessageModel) ToProtocolType2(channelData *protocol.Channel) *protocol.
 		ID:      m.ID,
 		Content: m.Content,
 		Channel: channelData,
-		//User:      userData,
-		//Member:    member.ToProtocolType(),
+		// User:      userData,
+		// Member:    member.ToProtocolType(),
 		CreatedAt: time.Now().UnixMilli(), // 跟js相匹配
 	}
 }

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia"
-import type { UserInfo } from "@/types";
+import type { UserEmojiModel, UserInfo } from "@/types";
 import Cookies from 'js-cookie';
 // import router from "@/router";
 
@@ -14,6 +14,7 @@ interface UserState {
   _accessToken: string
   info: UserInfo;
   lastCheckTime: number;
+  emojiCount: number,
 }
 
 export const useUserStore = defineStore({
@@ -22,6 +23,7 @@ export const useUserStore = defineStore({
   state: (): UserState => ({
     _accessToken: '',
     lastCheckTime: 0,
+    emojiCount: 1,
     // 这样比info?好的地方在于可以建立watch关联
     info: {
       id: "",
@@ -166,5 +168,31 @@ export const useUserStore = defineStore({
       // 更新 state 中的 accessToken
       this._accessToken = ''
     },
+
+    async emojiAdd(attachmentId: string) {
+      const user = useUserStore();
+      const resp = await api.post('api/v1/user/emoji-add', { attachmentId }, {
+        headers: { 'Authorization': user.token }
+      });
+      this.emojiCount += 1;
+      return resp;
+    },
+
+    async emojiDelete(id: string) {
+      const user = useUserStore();
+      const resp = await api.post('api/v1/user/emoji-delete', { id }, {
+        headers: { 'Authorization': user.token }
+      });
+      return resp;
+    },
+
+    async emojiList(): Promise<AxiosResponse<{ items: UserEmojiModel[] }, any>> {
+      const user = useUserStore();
+      const resp = await api.get('api/v1/user/emoji-list', {
+        headers: { 'Authorization': user.token }
+      });
+      return resp;
+    },
+
   },
 })

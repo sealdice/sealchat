@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import { urlBase } from '@/stores/_config';
+import type { UserEmojiModel } from '@/types';
 
 export interface Thumb {
   id?: string;
@@ -23,7 +24,7 @@ export class MySubClassedDexie extends Dexie {
 }
 
 
-export function getSrc(i: Thumb) {
+export function getSrcThumb(i: Thumb) {
   if (i.data) {
     let URL = window.URL || window.webkitURL
     if (URL && URL.createObjectURL) {
@@ -33,6 +34,10 @@ export function getSrc(i: Thumb) {
   } else {
       return `${urlBase}/api/v1/attachments/${i.id}`;
   }
+}
+
+export function getSrc(i: UserEmojiModel) {
+  return `${urlBase}/api/v1/attachments/${i.attachmentId || i.id}`;
 }
 
 export const db = new MySubClassedDexie();

@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"sealchat/model"
-	"sealchat/protocol"
-	"sealchat/utils"
 	"sync"
 	"time"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+
+	"sealchat/model"
+	"sealchat/protocol"
+	"sealchat/utils"
 )
 
 type ApiMsgPayload struct {
@@ -95,7 +96,7 @@ func websocketWorks(app *fiber.App) {
 
 	go func() {
 		// 持续删除超时连接
-		//for {
+		// for {
 		//	time.Sleep(5 * time.Second)
 		//	now := time.Now().Unix()
 		//	oldLen := connMap.Len()
@@ -121,7 +122,7 @@ func websocketWorks(app *fiber.App) {
 		//			Type: "channel-updated",
 		//		})
 		//	}
-		//}
+		// }
 	}()
 
 	app.Use("/ws", func(c *fiber.Ctx) error {
@@ -161,6 +162,10 @@ func websocketWorks(app *fiber.App) {
 				case protocol.OpIdentify:
 					fmt.Println("新客户端接入")
 					curUser, curConnInfo = clientEnter(c, gatewayMsg.Body)
+					if curUser == nil {
+						_ = c.Close()
+						return
+					}
 					solved = true
 				case protocol.OpPing:
 					if curUser == nil {
@@ -243,10 +248,10 @@ func websocketWorks(app *fiber.App) {
 			}
 
 			log.Printf("recv: %s  %d", msg, mt)
-			//if err = c.WriteMessage(mt, msg); err != nil {
+			// if err = c.WriteMessage(mt, msg); err != nil {
 			//	log.Println("write:", err)
 			//	break
-			//}
+			// }
 		}
 
 		// 连接断开，后续封装成函数

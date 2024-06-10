@@ -1,9 +1,9 @@
 package api
 
 import (
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	"sealchat/model"
 	"sealchat/protocol"
+	"sealchat/utils"
 )
 
 func (ctx *ChatContext) TagCheck(ChannelID, msgId, text string) {
@@ -15,7 +15,7 @@ func (ctx *ChatContext) TagCheck(ChannelID, msgId, text string) {
 		case "at":
 			mention := model.MentionModel{
 				StringPKBaseModel: model.StringPKBaseModel{
-					ID: gonanoid.Must(),
+					ID: utils.NewID(),
 				},
 				SenderId:    ctx.User.ID,
 				LocPostType: "channel",
@@ -34,5 +34,5 @@ func (ctx *ChatContext) TagCheck(ChannelID, msgId, text string) {
 			}
 		}
 	})
-	//fmt.Println("xxx", root.ToString())
+	// fmt.Println("xxx", root.ToString())
 }
