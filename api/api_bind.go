@@ -47,8 +47,8 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	app.Use(compress.New())
 
 	v1 := app.Group("/api/v1")
-	v1.Post("/user/signup", UserSignup)
-	v1.Post("/user/signin", UserSignin)
+	v1.Post("/user-signup", UserSignup)
+	v1.Post("/user-signin", UserSignin)
 
 	v1.Get("/config", func(c *fiber.Ctx) error {
 		return c.Status(http.StatusOK).JSON(appConfig)
@@ -56,17 +56,18 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 
 	v1Auth := v1.Group("")
 	v1Auth.Use(SignCheckMiddleware)
-	v1Auth.Post("/user/change_password", UserChangePassword)
-	v1Auth.Get("/user/info", UserInfo)
-	v1Auth.Put("/user/info", UserInfoUpdate)
-	v1Auth.Post("/user/emoji-add", UserEmojiAdd)
-	v1Auth.Get("/user/emoji-list", UserEmojiList)
-	v1Auth.Post("/user/emoji-delete", UserEmojiDelete)
+	v1Auth.Post("/user-password-change", UserChangePassword)
+	v1Auth.Get("/user-info", UserInfo)
+	v1Auth.Post("/user-info-update", UserInfoUpdate)
+	v1Auth.Post("/user-emoji-add", UserEmojiAdd)
+	v1Auth.Get("/user-emoji-list", UserEmojiList)
+	v1Auth.Post("/user-emoji-delete", UserEmojiDelete)
 
-	v1Auth.Get("/timeline/list", TimelineList)
+	v1Auth.Get("/timeline-list", TimelineList)
 
 	v1Auth.Post("/upload", Upload)
-	v1Auth.Get("/attachments/list", AttachmentList)
+	v1Auth.Post("/upload-quick", UploadQuick)
+	v1Auth.Get("/attachments-list", AttachmentList)
 	v1Auth.Get("/commands", func(c *fiber.Ctx) error {
 		m := map[string](map[string]string){}
 		commandTips.Range(func(key string, value map[string]string) bool {
@@ -78,13 +79,13 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	v1Auth.Static("/attachments", "./data/upload")
 
 	v1AuthAdmin := v1Auth.Group("", UserRoleAdminMiddleware)
-	v1AuthAdmin.Get("/bot_token-list", BotTokenList)
-	v1AuthAdmin.Post("/bot_token-add", BotTokenAdd)
-	v1AuthAdmin.Post("/bot_token-delete", BotTokenDelete)
-	v1AuthAdmin.Get("/admin/user/list", AdminUserList)
-	v1AuthAdmin.Put("/admin/user/disable/:id", AdminUserDisable)
-	v1AuthAdmin.Put("/admin/user/enable/:id", AdminUserEnable)
-	v1AuthAdmin.Put("/admin/user/reset_password/:id", AdminUserResetPassword)
+	v1AuthAdmin.Get("/admin/bot-token-list", BotTokenList)
+	v1AuthAdmin.Post("/admin/bot-token-add", BotTokenAdd)
+	v1AuthAdmin.Post("/admin/bot-token-delete", BotTokenDelete)
+	v1AuthAdmin.Get("/admin/user-list", AdminUserList)
+	v1AuthAdmin.Post("/admin/user-disable", AdminUserDisable)
+	v1AuthAdmin.Post("/admin/user-enable", AdminUserEnable)
+	v1AuthAdmin.Post("/admin/user-password-reset", AdminUserResetPassword)
 
 	v1AuthAdmin.Put("/config", func(ctx *fiber.Ctx) error {
 		var newConfig utils.AppConfig

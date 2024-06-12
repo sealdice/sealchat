@@ -213,7 +213,7 @@ const newChannel = async () => {
   </div>
   <div v-if="adminShow" style="background-color: var(--n-color); margin-left: -1.5rem;"
     class="absolute flex justify-center items-center w-full h-full pointer-events-none z-10">
-    <admin-settings @close="adminShow = false" />
+    <AdminSettings @close="adminShow = false" />
   </div>
   <notif v-show="notifShow" />
 </template>

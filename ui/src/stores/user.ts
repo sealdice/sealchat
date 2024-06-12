@@ -51,7 +51,7 @@ export const useUserStore = defineStore({
 
   actions: {
     async changePassword(form: { password: string, passwordNew: string }) {
-      const resp = await api.post('api/v1/user/change_password', {
+      const resp = await api.post('api/v1/user-password-change', {
         password: form.password, passwordNew: form.passwordNew
       }, {
         headers: { 'Authorization': this.token }
@@ -65,7 +65,7 @@ export const useUserStore = defineStore({
 
     async signIn(username: string, password: string) {
       // 在此处进行用户鉴权操作，获取 accessToken
-      const resp = await api.post('api/v1/user/signin', {
+      const resp = await api.post('api/v1/user-signin', {
         username, password
       })
 
@@ -83,7 +83,7 @@ export const useUserStore = defineStore({
     },
 
     async timelineList() {
-      const resp = await api.get('api/v1/timeline/list', {
+      const resp = await api.get('api/v1/timeline-list', {
         headers: { 'Authorization': this.token }
       })
       return resp
@@ -91,7 +91,7 @@ export const useUserStore = defineStore({
 
     // 强制更新用户信息
     async infoUpdate() {
-      const resp = await api.get('api/v1/user/info', {
+      const resp = await api.get('api/v1/user-info', {
         headers: { 'Authorization': this.token }
       })
       this.info = resp.data.user as UserInfo;
@@ -99,7 +99,7 @@ export const useUserStore = defineStore({
     },
 
     async changeInfo(info: { nick: string, brief: string }) {
-      const resp = await api.put('api/v1/user/info', info, {
+      const resp = await api.post('api/v1/user-info-update', info, {
         headers: { 'Authorization': this.token }
       })
       return resp;
@@ -110,7 +110,7 @@ export const useUserStore = defineStore({
       if (now + this.lastCheckTime > 60 * 1000) {
         // 向服务器发请求
         try {
-          const resp = await api.get('api/v1/user/info', {
+          const resp = await api.get('api/v1/user-info', {
             headers: { 'Authorization': this.token }
           })
           if (!this.info) {
@@ -138,7 +138,7 @@ export const useUserStore = defineStore({
     async signUp(form: { username: string, password: string, nickname: string }) {
       try {
         // 在此处进行用户鉴权操作，获取 accessToken
-        const resp = await api.post('api/v1/user/signup', {
+        const resp = await api.post('api/v1/user-signup', {
           username: form.username,
           password: form.password,
           nickname: form.nickname,
@@ -171,7 +171,7 @@ export const useUserStore = defineStore({
 
     async emojiAdd(attachmentId: string) {
       const user = useUserStore();
-      const resp = await api.post('api/v1/user/emoji-add', { attachmentId }, {
+      const resp = await api.post('api/v1/user-emoji-add', { attachmentId }, {
         headers: { 'Authorization': user.token }
       });
       this.emojiCount += 1;
@@ -180,7 +180,7 @@ export const useUserStore = defineStore({
 
     async emojiDelete(id: string) {
       const user = useUserStore();
-      const resp = await api.post('api/v1/user/emoji-delete', { id }, {
+      const resp = await api.post('api/v1/user-emoji-delete', { id }, {
         headers: { 'Authorization': user.token }
       });
       return resp;
@@ -188,7 +188,7 @@ export const useUserStore = defineStore({
 
     async emojiList(): Promise<AxiosResponse<{ items: UserEmojiModel[] }, any>> {
       const user = useUserStore();
-      const resp = await api.get('api/v1/user/emoji-list', {
+      const resp = await api.get('api/v1/user-emoji-list', {
         headers: { 'Authorization': user.token }
       });
       return resp;

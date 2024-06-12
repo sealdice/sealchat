@@ -205,7 +205,7 @@ func websocketWorks(app *fiber.App) {
 				if err == nil {
 					switch apiMsg.Api {
 					case "channel.create":
-						apiChannelCreate(c, msg, apiMsg.Echo)
+						apiChannelCreate(ctx, msg, apiMsg.Echo)
 						solved = true
 					case "channel.private.create":
 						// 私聊

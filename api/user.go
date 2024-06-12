@@ -350,7 +350,7 @@ func AdminUserList(c *fiber.Ctx) error {
 }
 
 func AdminUserRoleSet(c *fiber.Ctx, role string) error {
-	uid := c.Params("id")
+	uid := c.Query("id")
 	if uid == "" {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"message": "参数错误",
@@ -390,7 +390,7 @@ func AdminUserEnable(c *fiber.Ctx) error {
 }
 
 func AdminUserResetPassword(c *fiber.Ctx) error {
-	uid := c.Params("id")
+	uid := c.Query("id")
 	if uid == "" {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"message": "参数错误",

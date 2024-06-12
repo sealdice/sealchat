@@ -27,8 +27,8 @@ func (*Attachment) TableName() string {
 	return "attachments"
 }
 
-func AttachmentCreate(at *Attachment) (tx *gorm.DB) {
+func AttachmentCreate(at *Attachment) (tx *gorm.DB, item *Attachment) {
 	db := GetDB()
 	at.ID = utils.NewID()
-	return db.Create(at)
+	return db.Create(at), at
 }

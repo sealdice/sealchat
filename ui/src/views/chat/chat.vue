@@ -108,8 +108,8 @@ const send = throttle(async () => {
   instantMessages.add(tmpMsg);
 
   try {
-    t = await replaceUsernames(t)
     t = contentEscape(t)
+    t = await replaceUsernames(t)
 
     tmpMsg.content = t;
     const newMsg = await chat.messageCreate(t, replyTo?.id);

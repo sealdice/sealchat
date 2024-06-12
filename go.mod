@@ -6,11 +6,11 @@ require (
 	github.com/glebarez/sqlite v1.10.0
 	github.com/gofiber/contrib/websocket v1.2.2
 	github.com/gofiber/fiber/v2 v2.50.0
-	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/kardianos/service v1.2.2
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mikespook/gorbac v2.3.0+incompatible
+	github.com/orisano/wyhash v1.1.0
 	github.com/samber/lo v1.38.1
 	github.com/sealdice/dicescript v0.0.0-20240608121936-655f62cd6bb0
 	github.com/spf13/afero v1.10.0
@@ -32,7 +32,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
-	github.com/orisano/wyhash v1.1.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/savsgio/gotils v0.0.0-20230208104028-c358bd845dee // indirect

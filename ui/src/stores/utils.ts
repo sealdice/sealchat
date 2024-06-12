@@ -73,7 +73,7 @@ export const useUtilsStore = defineStore({
 
     async botTokenList() {
       const user = useUserStore();
-      const resp = await api.get('api/v1/bot_token-list', {
+      const resp = await api.get('api/v1/admin/bot-token-list', {
         headers: { 'Authorization': user.token }
       })
       return resp
@@ -81,7 +81,7 @@ export const useUtilsStore = defineStore({
 
     async botTokenAdd(name: string) {
       const user = useUserStore();
-      const resp = await api.post('api/v1/bot_token-add', { name }, {
+      const resp = await api.post('api/v1/admin/bot-token-add', { name }, {
         headers: { 'Authorization': user.token }
       })
       return resp
@@ -89,7 +89,7 @@ export const useUtilsStore = defineStore({
 
     async botTokenDelete(id: string) {
       const user = useUserStore();
-      const resp = await api.post(`api/v1/bot_token-delete`, {}, {
+      const resp = await api.post(`api/v1/admin/bot-token-delete`, {}, {
         headers: { 'Authorization': user.token },
         params: { id },
       })
@@ -106,7 +106,7 @@ export const useUtilsStore = defineStore({
 
     async adminUserList() {
       const user = useUserStore();
-      const resp = await api.get('api/v1/admin/user/list', {
+      const resp = await api.get('api/v1/admin/user-list', {
         headers: { 'Authorization': user.token }
       })
       return resp
@@ -114,24 +114,27 @@ export const useUtilsStore = defineStore({
 
     async userResetPassword(id: string) {
       const user = useUserStore();
-      const resp = await api.put(`api/v1/admin/user/reset_password/${id}`, null, {
-        headers: { 'Authorization': user.token }
+      const resp = await api.post(`api/v1/admin/user-password-reset`, null, {
+        headers: { 'Authorization': user.token },
+        params: { id },
       })
       return resp
     },
 
     async userEnable(id: string) {
       const user = useUserStore();
-      const resp = await api.put(`api/v1/admin/user/enable/${id}`, null, {
-        headers: { 'Authorization': user.token }
+      const resp = await api.post(`api/v1/admin/user-enable`, null, {
+        headers: { 'Authorization': user.token },
+        params: { id },
       })
       return resp
     },
 
     async userDisable(id: string) {
       const user = useUserStore();
-      const resp = await api.put(`api/v1/admin/user/disable/${id}`, null, {
-        headers: { 'Authorization': user.token }
+      const resp = await api.post(`api/v1/admin/user-disable`, null, {
+        headers: { 'Authorization': user.token },
+        params: { id },
       })
       return resp
     },

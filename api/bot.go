@@ -86,7 +86,7 @@ func BotTokenAdd(c *fiber.Ctx) error {
 
 func BotTokenDelete(c *fiber.Ctx) error {
 	db := model.GetDB()
-	err := db.Delete(&model.BotTokenModel{}, "id = ?", c.Params("id")).Error
+	err := db.Delete(&model.BotTokenModel{}, "id = ?", c.Query("id")).Error
 	if err != nil {
 		return err
 	}

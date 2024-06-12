@@ -50,6 +50,7 @@ const doChannelSwitch = async (i: Channel) => {
 	await chat.channelSwitchTo(i.id);
 }
 
+const showModal2 = ref(false);
 const doSetting = async (i: Channel) => {
 	alert('还没做');
 }
@@ -195,6 +196,13 @@ const speak = () => {
 	</div>
 
 	<n-modal v-model:show="showModal" preset="dialog" :title="$t('dialoChannelgNew.title')"
+		:positive-text="$t('dialoChannelgNew.positiveText')" :negative-text="$t('dialoChannelgNew.negativeText')"
+		@positive-click="newChannel">
+		<n-input v-model:value="newChannelName"></n-input>
+	</n-modal>
+
+
+	<n-modal v-model:show="showModal2" preset="dialog" :title="$t('dialoChannelgNew.title')"
 		:positive-text="$t('dialoChannelgNew.positiveText')" :negative-text="$t('dialoChannelgNew.negativeText')"
 		@positive-click="newChannel">
 		<n-input v-model:value="newChannelName"></n-input>

@@ -18,6 +18,7 @@ type ChannelModel struct {
 	MembersCount int    `json:"membersCount" gorm:"-"`
 	IsPrivate    bool   `json:"isPrivate" gorm:"index"` // 是私聊频道吗？
 	RecentSentAt int64  `json:"recentSentAt"`           // 最近发送消息的时间
+	UserID       string `json:"userId"`
 }
 
 func (*ChannelModel) TableName() string {
@@ -59,8 +60,8 @@ func (*ChannelPermModel) TableName() string {
 	return "channel_perms"
 }
 
-func ChannelPublicNew(channelID string, name string) *ChannelModel {
-	ch := &ChannelModel{StringPKBaseModel: StringPKBaseModel{ID: channelID}, Name: name}
+func ChannelPublicNew(channelID string, name string, creatorId string) *ChannelModel {
+	ch := &ChannelModel{StringPKBaseModel: StringPKBaseModel{ID: channelID}, Name: name, UserID: creatorId}
 	db.Create(ch)
 	db.Create(&ChannelPermModel{StringPKBaseModel: StringPKBaseModel{ID: utils.NewID()}, ChannelID: channelID, UserID: ChannelPermUserALL})
 	return ch

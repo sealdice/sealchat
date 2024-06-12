@@ -17,7 +17,7 @@ import (
 	"sealchat/utils"
 )
 
-func apiChannelCreate(c *WsSyncConn, msg []byte, echo string) {
+func apiChannelCreate(ctx *ChatContext, msg []byte, echo string) {
 	data := struct {
 		// guild_id 字段无意义，因为不可能由客户端提交
 		Data protocol.Channel `json:"data"`
@@ -27,9 +27,9 @@ func apiChannelCreate(c *WsSyncConn, msg []byte, echo string) {
 		return
 	}
 
-	m := model.ChannelPublicNew(utils.NewID(), data.Data.Name)
+	m := model.ChannelPublicNew(utils.NewID(), data.Data.Name, ctx.User.ID)
 
-	_ = c.WriteJSON(struct {
+	_ = ctx.Conn.WriteJSON(struct {
 		Channel *protocol.Channel `json:"channel"`
 		Echo    string            `json:"echo"`
 	}{Channel: &protocol.Channel{ID: m.ID, Name: m.Name}, Echo: echo})

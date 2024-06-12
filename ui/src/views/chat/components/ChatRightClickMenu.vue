@@ -42,7 +42,7 @@ const clickCopy = async () => {
     await navigator.clipboard.writeText(copyText);
     message.success("已复制");
   } catch (err) {
-    console.error('复制失败');
+    message.error('复制失败');
   }
 }
 

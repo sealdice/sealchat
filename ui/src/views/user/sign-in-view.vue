@@ -52,7 +52,7 @@ const handleValidateButtonClick = async (e: MouseEvent) => {
           // }, 3000);
         }
       } catch (err) {
-        message.error('登录失败: ' + ((err as any).data?.message || '密码错误'))
+        message.error('登录失败: ' + ((err as any).data?.message || '密码错误/连接服务器失败'))
       }
     } else {
       console.log(errors)
