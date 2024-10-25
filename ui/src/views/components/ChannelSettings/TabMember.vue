@@ -148,7 +148,7 @@ const selectedMembersSet = async (role: ChannelRoleModel, lst: string[], oldLst:
 
 const getFilteredMemberList = (lst?: UserRoleModel[]) => {
   const retLst = (lst ?? []).map(i => i.user).filter(i => i != undefined);
-  return uniqBy(retLst, 'id');
+  return uniqBy(retLst, 'id') as any as UserInfo[]; // 部分版本中编译器对类型有误判
 };
 </script>
 

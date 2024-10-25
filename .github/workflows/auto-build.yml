@@ -1,0 +1,143 @@
+name: Auto Build
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  COMMIT_ID: "${{ github.sha }}"
+  NO_BUILD_PROMPT: "no new commits, no need to build."
+
+jobs:
+  ui-build:
+    name: Build UI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Get UI hash
+        id: ui-hash
+        run: |
+          echo "UI_HASH=$(find ui -type f | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+      - name: Cache UI build
+        uses: actions/cache@v3
+        id: cache
+        with:
+          path: ./ui/dist
+          key: ${{ runner.os }}-ui-${{ steps.ui-hash.outputs.UI_HASH }}
+          restore-keys: |
+            ${{ runner.os }}-ui-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          node-version: latest
+
+      - name: Build UI
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          cd ui
+          yarn install
+          yarn build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui
+          path: ./ui/dist
+
+#  delete-previous-release:
+#    name: Delete dev-release
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: dev-drprasad/delete-tag-and-release@v0.2.1
+#        with:
+#          delete_release: true
+#          tag_name: dev
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  backend-build:
+    name: Build Server
+    runs-on: ubuntu-latest
+    needs: ui-build
+    strategy:
+      matrix:
+        include:
+          - name: linux_amd64
+            goos: linux
+            goarch: amd64
+          - name: linux_arm64
+            goos: linux
+            goarch: arm64
+          - name: windows_amd64
+            goos: windows
+            goarch: amd64
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Get UI resources
+        uses: actions/download-artifact@v4
+        with:
+          name: ui
+          path: ./ui/dist
+
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.11.0
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 1
+        run: |
+          if [ "${{ matrix.goos }}" = "linux" ]; then
+            if [ "${{ matrix.goarch }}" = "amd64" ]; then
+              CC="zig cc -target x86_64-linux-musl" go build -o "output/sealchat-server" -trimpath -ldflags "-s -w -linkmode external -extldflags '-static'" .
+            elif [ "${{ matrix.goarch }}" = "arm64" ]; then
+              CC="zig cc -target aarch64-linux-musl" go build -o "output/sealchat-server" -trimpath -ldflags "-s -w -linkmode external -extldflags '-static'" .
+            fi
+          elif [ "${{ matrix.goos }}" = "windows" ]; then
+            CC="zig cc -target x86_64-windows-gnu" go build -o "output/sealchat-server.exe" -trimpath -ldflags "-s -w" .
+          fi
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: sealchat_${{ github.sha }}_${{ matrix.name }}
+          path: ./output
+
+      - name: Compress files
+        run: |
+          mkdir -p release
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          if [ "${{ matrix.goos }}" = "linux" ]; then
+            tar -czvf release/sealchat_$(date +%Y%m%d)_${SHORT_SHA}_${{ matrix.name }}.tar.gz -C output sealchat-server
+            chmod +x release/sealchat_$(date +%Y%m%d)_${SHORT_SHA}_${{ matrix.name }}.tar.gz
+          elif [ "${{ matrix.goos }}" = "windows" ]; then
+            cd output && zip -r ../release/sealchat_$(date +%Y%m%d)_${SHORT_SHA}_${{ matrix.name }}.zip sealchat-server.exe
+          fi
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: dev-release
+          files: |
+            release/sealchat_*_*_${{ matrix.name }}.*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
