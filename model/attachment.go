@@ -16,7 +16,7 @@ func (m ByteArray) MarshalJSON() ([]byte, error) {
 
 type Attachment struct {
 	StringPKBaseModel
-	Hash      ByteArray `gorm:"index" json:"hash"`
+	Hash      ByteArray `gorm:"index,size:100" json:"hash"` // hash是32byte
 	Filename  string    `json:"filename"`
 	Size      int64     `gorm:"index" json:"size"`
 	UserID    string    `json:"userId" gorm:"index"`

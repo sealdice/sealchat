@@ -2,15 +2,17 @@ package main
 
 import (
 	"embed"
-	"github.com/samber/lo"
 	"os"
 	"os/signal"
-	"sealchat/api"
-	"sealchat/model"
-	"sealchat/utils"
 	"time"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/samber/lo"
+
+	"sealchat/api"
+	"sealchat/model"
+	"sealchat/pm"
+	"sealchat/utils"
 )
 
 //go:embed ui/dist
@@ -39,7 +41,7 @@ func main() {
 	lo.Must0(os.MkdirAll("./data", 0755))
 	config := utils.ReadConfig()
 
-	model.DBInit()
+	model.DBInit(config.DSN)
 	cleanUp := func() {
 		if db := model.GetDB(); db != nil {
 			if sqlDB, err := db.DB(); err == nil {
@@ -54,6 +56,17 @@ func main() {
 		cleanUp()
 		os.Exit(0)
 	}()
+
+	pm.Init()
+	// model.UserRoleMappingCreate(&model.UserRoleMappingModel{
+	// 	UserID:   "e6ww4e_jUU9LXOKjo3h3z",
+	// 	RoleID:   "sys-admin",
+	// 	RoleType: "system",
+	// })
+
+	// perm := pm.GetAllSysPermByUid("e6ww4e_jUU9LXOKjo3h3z")
+	// x, err := json.Marshal(perm)
+	// fmt.Println(string((x)), err)
 
 	autoSave := func() {
 		t := time.NewTicker(3 * 60 * time.Second)

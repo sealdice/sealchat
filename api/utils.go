@@ -3,11 +3,16 @@ package api
 import (
 	"io"
 	"mime/multipart"
+	"net/http"
 	"sync"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/mikespook/gorbac"
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
 	"golang.org/x/crypto/blake2s"
+
+	"sealchat/pm"
 )
 
 var copyBufPool = sync.Pool{
@@ -47,4 +52,40 @@ func SaveMultipartFile(fh *multipart.FileHeader, fOut afero.File, limit int64) (
 	_, err = copyZeroAlloc(fOut, teeReader)
 	hashOut = hash.Sum(nil)
 	return
+}
+
+// Can 检查当前用户是否拥有指定项目的指定权限
+func Can(c *fiber.Ctx, chId string, relations ...gorbac.Permission) bool {
+	ok := pm.Can(getCurUser(c).ID, chId, relations...)
+	if !ok {
+		_ = c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "无权限访问"})
+	}
+	return ok
+}
+
+// CanWithSystemRole 检查当前用户是否拥有指定权限
+func CanWithSystemRole(c *fiber.Ctx, relations ...gorbac.Permission) bool {
+	ok := pm.CanWithSystemRole(getCurUser(c).ID, relations...)
+	if !ok {
+		_ = c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "无权限访问"})
+	}
+	return ok
+}
+
+// CanWithSystemRole2 检查当前用户是否拥有指定权限
+func CanWithSystemRole2(c *fiber.Ctx, userId string, relations ...gorbac.Permission) bool {
+	ok := pm.CanWithSystemRole(userId, relations...)
+	if !ok {
+		_ = c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "无权限访问"})
+	}
+	return ok
+}
+
+// CanWithChannelRole 检查当前用户是否拥有指定项目的指定权限
+func CanWithChannelRole(c *fiber.Ctx, chId string, relations ...gorbac.Permission) bool {
+	ok := pm.CanWithChannelRole(getCurUser(c).ID, chId, relations...)
+	if !ok {
+		_ = c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "无权限访问"})
+	}
+	return ok
 }

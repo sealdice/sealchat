@@ -1,4 +1,5 @@
 <script setup lang="tsx">
+import { useChatStore } from '@/stores/chat';
 import { useUtilsStore } from '@/stores/utils';
 import type { ServerConfig, UserInfo } from '@/types';
 import { Message, Refresh } from '@vicons/tabler';
@@ -18,6 +19,7 @@ const close = () => {
   emit('close');
 }
 
+const chat = useChatStore();
 const utils = useUtilsStore();
 const message = useMessage()
 
@@ -99,11 +101,29 @@ const tryUserEnable = (i: UserInfo) => {
   })
 }
 
+const handleRoleChange = async (userId: string, roleLst: string[], oldRoleLst: string[]) => {
+  // 计算需要移除和添加的成员
+  const toRemove = oldRoleLst.filter(id => !roleLst.includes(id));
+  const toAdd = roleLst.filter(id => !oldRoleLst.includes(id));
+  console.log('toAdd', toAdd);
+  console.log('toRemove', toRemove);
+
+  try {
+    if (toAdd.length) await utils.userRoleLinkByUserId(userId, toAdd);
+    if (toRemove.length) await utils.userRoleUnlinkByUserId(userId, toRemove);
+    refresh();
+    message.success('角色已成功添加');
+  } catch (error) {
+    console.error('添加角色失败:', error);
+    message.error('添加角色失败，请重试');
+  }
+};
+
 const columns = ref([
-  {
-    title: 'id',
-    key: 'id'
-  },
+  // {
+  //   title: 'id',
+  //   key: 'id'
+  // },
   {
     title: 'username',
     key: 'username'
@@ -114,12 +134,27 @@ const columns = ref([
   },
   {
     title: 'role',
-    key: 'role'
+    key: 'role',
+    render: (row: UserInfo) => {
+      return (
+        // { label: '游客', value: 'sys-visitor' }
+        <n-select
+          v-model:value={row.roleIds}
+          multiple
+          options={[
+            { label: '管理员', value: 'sys-admin' },
+            { label: '普通用户', value: 'sys-user' },
+          ]}
+          size="small"
+          on-update:value={(value: any) => handleRoleChange(row.id, value, row.roleIds ?? [])}
+        />
+      )
+    },
   },
   {
     title: 'actions',
     render: (row: UserInfo) => {
-      const isDisabled = row.role === 'role-disabled';
+      const isDisabled = row.disabled;
       return <div class="flex space-x-2">
         <n-button type="warning" size="small" onClick={() => tryUserResetPassword(row)}>重置密码</n-button>
         {!isDisabled ? <n-button type="error" size="small" onClick={() => tryUserDisable(row)}>停用</n-button> :

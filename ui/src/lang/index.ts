@@ -44,4 +44,4 @@ export function setLocaleByNavigatorWithStorage() {
 }
 
 (globalThis as any).setLocale = setLocale;
-console.log('setLocale', setLocale)
+// console.log('setLocale', setLocale)

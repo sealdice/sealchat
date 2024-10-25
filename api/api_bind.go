@@ -14,6 +14,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/spf13/afero"
 
+	"sealchat/pm"
 	"sealchat/utils"
 )
 
@@ -51,7 +52,12 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	v1.Post("/user-signin", UserSignin)
 
 	v1.Get("/config", func(c *fiber.Ctx) error {
-		return c.Status(http.StatusOK).JSON(appConfig)
+		ret := *appConfig
+		u := getCurUser(c)
+		if u == nil || !pm.CanWithSystemRole(u.ID, pm.PermModAdmin) {
+			ret.ServeAt = ""
+		}
+		return c.Status(http.StatusOK).JSON(ret)
 	})
 
 	v1Auth := v1.Group("")
@@ -78,6 +84,14 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	})
 	v1Auth.Static("/attachments", "./data/upload")
 
+	v1Auth.Get("/channel-role-list", ChannelRoles)
+	v1Auth.Get("/channel-member-list", ChannelMembers)
+
+	v1Auth.Post("/user-role-link", UserRoleLink)
+	v1Auth.Post("/user-role-unlink", UserRoleUnlink)
+	v1Auth.Get("/friend-list", FriendList)
+	v1Auth.Get("/bot-list", BotList)
+
 	v1AuthAdmin := v1Auth.Group("", UserRoleAdminMiddleware)
 	v1AuthAdmin.Get("/admin/bot-token-list", BotTokenList)
 	v1AuthAdmin.Post("/admin/bot-token-add", BotTokenAdd)
@@ -86,6 +100,8 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	v1AuthAdmin.Post("/admin/user-disable", AdminUserDisable)
 	v1AuthAdmin.Post("/admin/user-enable", AdminUserEnable)
 	v1AuthAdmin.Post("/admin/user-password-reset", AdminUserResetPassword)
+	v1AuthAdmin.Post("/admin/user-role-link-by-user-id", AdminUserRoleLinkByUserId)
+	v1AuthAdmin.Post("/admin/user-role-unlink-by-user-id", AdminUserRoleUnlinkByUserId)
 
 	v1AuthAdmin.Put("/config", func(ctx *fiber.Ctx) error {
 		var newConfig utils.AppConfig

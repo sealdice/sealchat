@@ -33,7 +33,8 @@ export interface UserInfo {
   nick: string;
   avatar: string;
   brief: string;
-  role: "role-admin" | 'role-disabled' | '';
+  roleIds?: string[];
+  disabled: boolean;
 }
 
 export interface TalkMessage {
@@ -50,6 +51,21 @@ interface APIMessageCreate {
   // api: 'message.create'
   channel_id: string
   content: string
+}
+
+export interface SChannel extends Channel {
+  isPrivate?: boolean;
+  createdAt?: string; // 频道创建时间
+  updatedAt?: string; // 频道最后更新时间
+  rootId?: string; // 根频道ID
+  recentSentAt?: number; // 最近发送消息的时间戳
+  permType?: string; // 权限类型
+  friendInfo?: FriendInfo; // 好友信息(如果是私聊频道)
+  membersCount?: number; // 频道成员数量
+
+  children?: SChannel[];
+  typingIndicatorSetting?: boolean;
+  desc?: string;
 }
 
 export type APIMessageCreateResp = Message
@@ -79,15 +95,71 @@ export interface APIChannelCreateResp {
 }
 
 export interface APIChannelListResp {
-  data: Channel[],
   echo?: string,
-  next?: string,
+  data: {
+    data: Channel[],
+    next?: string,  
+  }
 }
 
 export type APIMessage = APIMessageCreate | APIMessageGet | APIChannelList;
+
+interface ModelDataBase {
+  id: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface UserEmojiModel {
   id: string
   attachmentId: string;
   order?: number;
+}
+
+export enum ChannelType {
+  Public = 'public',
+  NonPublic = 'non-public',
+  Private = 'private'
+}
+
+
+export interface FriendInfo extends ModelDataBase {
+  userId1: string;
+  userId2: string;
+  isFriend: boolean;
+  userInfo: null | UserInfo; // 这里的 'any' 可以根据实际情况替换为更具体的类型
+}
+
+export interface FriendRequestModel extends ModelDataBase {
+  senderId: string;   // 发送者
+  receiverId: string; // 接收者
+  note: string;       // 申请理由
+  status: string;     // 可能的值：pending, accept, reject
+
+  userInfoSender?: UserInfo;
+  userInfoReceiver?: UserInfo;
+
+  userInfoTemp?: UserInfo;
+}
+
+// 频道角色类
+export interface ChannelRoleModel extends ModelDataBase {
+  name: string;
+  desc: string;
+  channelId: string;
+}
+
+export interface UserRoleModel extends ModelDataBase {
+  roleType: string; // 可以是 "channel" 或 "system"
+  userId: string;
+  roleId: string;
+
+  user?: UserInfo;
+}
+
+export interface PaginationListResponse<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
 }

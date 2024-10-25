@@ -2,11 +2,12 @@ package api
 
 import (
 	"net/http"
-	"sealchat/utils"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"sealchat/model"
+	"sealchat/utils"
 )
 
 func BotTokenList(c *fiber.Ctx) error {
@@ -55,7 +56,6 @@ func BotTokenAdd(c *fiber.Ctx) error {
 		StringPKBaseModel: model.StringPKBaseModel{
 			ID: uid,
 		},
-		Role:     "",
 		Username: utils.NewID(),
 		Nickname: data.Name,
 		Password: "",

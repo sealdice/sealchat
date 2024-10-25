@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/blake2s"
+	"gorm.io/gorm"
 
 	"sealchat/protocol"
 	"sealchat/utils"
@@ -19,14 +20,17 @@ type UserModel struct {
 	Nickname string `gorm:"null" json:"nick"` // 昵称
 	Avatar   string `json:"avatar"`           // 头像
 	Brief    string `json:"brief"`            // 简介
-	Role     string `json:"role"`             // 权限
+	// Role     string `json:"role"`             // 权限
 
-	Username string `gorm:"uniqueIndex;not null" json:"username"` // 用户名，唯一，非空
-	Password string `gorm:"not null" json:"-"`                    // 密码，非空
-	Salt     string `gorm:"not null" json:"-"`                    // 盐，非空
-	IsBot    bool   `gorm:"null" json:"is_bot"`                   // 是否是机器人
+	Username string `gorm:"index,unique;not null" json:"username"` // 用户名，唯一，非空
+	Password string `gorm:"not null" json:"-"`                     // 密码，非空
+	Salt     string `gorm:"not null" json:"-"`                     // 盐，非空
+	IsBot    bool   `gorm:"null" json:"is_bot"`                    // 是否是机器人
 
+	Disabled    bool              `json:"disabled"`
 	AccessToken *AccessTokenModel `gorm:"-" json:"-"`
+
+	RoleIds []string `json:"roleIds" gorm:"-"`
 	// Token          string `gorm:"index" json:"token"` // 令牌
 	// TokenExpiresAt int64  `json:"expiresAt"`
 	// RecentSentAt int64 `json:"recentSentAt"` // 最近发送消息的时间
@@ -51,6 +55,11 @@ func (u *UserModel) SaveAvatar() {
 
 func (u *UserModel) SaveInfo() {
 	db.Model(u).Select("nickname", "brief").Updates(u)
+}
+
+// UserSetDisable 禁用用户函数
+func UserSetDisable(userId string, val bool) error {
+	return db.Model(&UserModel{}).Where("id = ?", userId).Update("disabled", val).Error
 }
 
 // AccessTokenModel access_token表
@@ -86,23 +95,20 @@ func hashPassword(password string, salt string) (string, error) {
 	return hash, nil
 }
 
-// 创建用户
-func UserCreate(username, password string, nickname string) (*UserModel, error) {
-	var role string
-
+func UserCount() int64 {
 	var count int64
 	db.Select("id").Find(&UserModel{}).Count(&count)
-	if count == 0 {
-		role = "role-admin"
-	}
+	return count
+}
 
+// 创建用户
+func UserCreate(username, password string, nickname string) (*UserModel, error) {
 	salt := generateSalt()
 	hashedPassword, err := hashPassword(password, salt)
 	if err != nil {
 		return nil, err
 	}
 	user := &UserModel{
-		Role:     role,
 		Username: username,
 		Nickname: nickname,
 		Password: hashedPassword,
@@ -190,7 +196,7 @@ func UserVerifyAccessToken(tokenString string) (*UserModel, error) {
 	}
 
 	var accessToken AccessTokenModel
-	if err := db.Where("id = ?", ret.Token).First(&accessToken).Error; err != nil {
+	if err := db.Where("id = ?", ret.Token).Limit(1).Find(&accessToken).Error; err != nil {
 		return nil, ErrInvalidToken
 	}
 
@@ -229,4 +235,32 @@ func UserRefreshAccessToken(tokenID string) (string, error) {
 
 	signedToken := TokenSign(accessToken.ID, expiredAt)
 	return signedToken, nil
+}
+
+// UserGetEx 获取用户信息
+func UserGetEx(id string) (*UserModel, error) {
+	var user UserModel
+	result := db.Where("id = ?", id).Limit(1).Find(&user)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("用户不存在")
+		}
+		return nil, fmt.Errorf("获取用户信息失败: %v", result.Error)
+	}
+	return &user, nil
+}
+
+func UserGet(id string) *UserModel {
+	r, _ := UserGetEx(id)
+	return r
+}
+
+// UserBotList 查询所有启用的机器人用户
+func UserBotList() ([]*UserModel, error) {
+	var bots []*UserModel
+	err := db.Where("disabled = ? AND is_bot = ?", false, true).Find(&bots).Error
+	if err != nil {
+		return nil, err
+	}
+	return bots, nil
 }

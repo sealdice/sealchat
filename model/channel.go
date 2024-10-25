@@ -5,20 +5,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/samber/lo"
-
 	"sealchat/protocol"
-	"sealchat/utils"
 )
 
 type ChannelModel struct {
 	StringPKBaseModel
 	Name         string `json:"name"`
-	ParentID     string `json:"parentId" gorm:"null"` // 好像satori协议这里不统一啊
-	MembersCount int    `json:"membersCount" gorm:"-"`
+	Note         string `json:"note"`                   // 这是一份注释，用于管理人员辨别数据
+	RootId       string `json:"rootId"`                 // 如果未来有多级子频道，那么rootId指向顶层
+	ParentID     string `json:"parentId" gorm:"null"`   // 好像satori协议这里不统一啊
 	IsPrivate    bool   `json:"isPrivate" gorm:"index"` // 是私聊频道吗？
 	RecentSentAt int64  `json:"recentSentAt"`           // 最近发送消息的时间
-	UserID       string `json:"userId"`
+	UserID       string `json:"userId"`                 // 创建者ID
+	PermType     string `json:"permType"`               // public 公开 non-public 非公开 private 私聊
+
+	FriendInfo   *FriendModel `json:"friendInfo,omitempty" gorm:"-"`
+	MembersCount int          `json:"membersCount" gorm:"-"`
 }
 
 func (*ChannelModel) TableName() string {
@@ -46,24 +48,11 @@ func (c *ChannelModel) ToProtocolType() *protocol.Channel {
 	}
 }
 
-const (
-	ChannelPermUserALL = "@all"
-)
+func ChannelPublicNew(channelID string, ch *ChannelModel, creatorId string) *ChannelModel {
+	ch.ID = channelID
+	ch.UserID = creatorId
 
-type ChannelPermModel struct {
-	StringPKBaseModel
-	ChannelID string `json:"channel_id" gorm:"index"` // 准入的频道ID
-	UserID    string `json:"user_id" gorm:"index"`    // 准入的用户ID
-}
-
-func (*ChannelPermModel) TableName() string {
-	return "channel_perms"
-}
-
-func ChannelPublicNew(channelID string, name string, creatorId string) *ChannelModel {
-	ch := &ChannelModel{StringPKBaseModel: StringPKBaseModel{ID: channelID}, Name: name, UserID: creatorId}
 	db.Create(ch)
-	db.Create(&ChannelPermModel{StringPKBaseModel: StringPKBaseModel{ID: utils.NewID()}, ChannelID: channelID, UserID: ChannelPermUserALL})
 	return ch
 }
 
@@ -74,56 +63,43 @@ func ChannelPrivateNew(userID1, userID2 string) (ch *ChannelModel, isNew bool) {
 
 	chId := fmt.Sprintf("%s:%s", userID1, userID2)
 
+	u1 := UserGet(userID1)
+	u2 := UserGet(userID2)
+
+	if u1 == nil || u2 == nil {
+		return nil, false
+	}
+
 	chExists := &ChannelModel{}
-	db.Where("id = ?", chId).First(&chExists)
+	db.Where("id = ?", chId).Limit(1).Find(&chExists)
 	if chExists.ID != "" {
 		return chExists, false
 	}
 
-	ch = &ChannelModel{StringPKBaseModel: StringPKBaseModel{ID: chId}, IsPrivate: true, Name: "@私聊频道"}
-
+	ch = &ChannelModel{
+		StringPKBaseModel: StringPKBaseModel{ID: chId},
+		IsPrivate:         true,
+		Name:              "@私聊频道",
+		PermType:          "private",
+		Note:              fmt.Sprintf("%s-%s", u1.Username, u2.Username),
+	}
 	db.Create(ch)
-	db.Create(&ChannelPermModel{StringPKBaseModel: StringPKBaseModel{ID: utils.NewID()}, ChannelID: chId, UserID: userID1})
-	db.Create(&ChannelPermModel{StringPKBaseModel: StringPKBaseModel{ID: utils.NewID()}, ChannelID: chId, UserID: userID2})
 
 	return ch, true
 }
 
-func ChannelList(userId string) []*ChannelModel {
+// ChannelGet 获取频道
+func ChannelGet(id string) (*ChannelModel, error) {
+	var item ChannelModel
+	err := db.Limit(1).Find(&item, "id = ?", id).Error
+	return &item, err
+}
+
+func ChannelPrivateList(userId string) []*ChannelModel {
 	// 加载有权限访问的频道
-	var items []*ChannelPermModel
-	db.Where("user_id = ? or user_id = ?", ChannelPermUserALL, userId).Find(&items)
+	var items []*ChannelModel
+	q := db.Where("is_private = true and ", true).Order("created_at asc")
+	q.Find(&items)
 
-	ids := lo.Map(items, func(item *ChannelPermModel, index int) string {
-		return item.ChannelID
-	})
-	ids = lo.Uniq(ids)
-
-	var items2 []*ChannelModel
-	db.Where("id in ?", ids).Order("is_private asc, created_at asc").Find(&items2)
-
-	// 加载私人频道
-	uid2channel := make(map[string]*ChannelModel)
-
-	var uids []string
-	for _, i := range items2 {
-		if i.IsPrivate {
-			for _, j := range i.GetPrivateUserIDs() {
-				if j != userId {
-					uids = append(uids, j)
-					uid2channel[j] = i
-				}
-			}
-			i.Name = "@私聊频道"
-		}
-	}
-	uids = lo.Uniq(uids)
-
-	var uItems []*UserModel
-	db.Where("id in ?", uids).Find(&uItems)
-	for _, i := range uItems {
-		uid2channel[i.ID].Name = fmt.Sprintf("%s", i.Nickname)
-	}
-
-	return items2
+	return items
 }

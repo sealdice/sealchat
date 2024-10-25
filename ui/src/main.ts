@@ -47,6 +47,17 @@ router.beforeEach(async (to, from, next) => {
   return;
 })
 
+// import AutoImport from 'unplugin-auto-import/vite'
+// import { VueHooksPlusResolver } from '@vue-hooks-plus/resolvers'
+
+// export const AutoImportDeps = () =>
+//   AutoImport({
+//     imports: ['vue', 'vue-router'],
+//     include: [/\.[tj]sx?$/, /\.vue$/, /\.vue\?vue/, /\.md$/],
+//     dts: 'src/auto-imports.d.ts',
+//     resolvers: [VueHooksPlusResolver()],
+//   })
+
 // 这几句详见 https://www.naiveui.com/zh-CN/os-theme/docs/style-conflict
 const meta = document.createElement('meta')
 meta.name = 'naive-ui-style'

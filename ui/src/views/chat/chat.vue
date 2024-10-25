@@ -116,6 +116,12 @@ const send = throttle(async () => {
     for (let [k, v] of Object.entries(newMsg)) {
       (tmpMsg as any)[k] = v;
     }
+    instantMessages.delete(tmpMsg);
+    // 从rows中删除tmpMsg，用id做匹配
+    const index = rows.value.findIndex(msg => msg.id === tmpMsg.id);
+    if (index !== -1) {
+      rows.value.splice(index, 1);
+    }
   } catch (e) {
     message.error('消息发送失败');
     console.error('消息发送失败', e);
@@ -346,6 +352,8 @@ const atRenderLabel = (option: MentionOption) => {
   }
 }
 
+const atPrefix = computed(() => chat.atOptionsOn ? ['@', '/', '.'] : ['@']);
+
 const atHandleSearch = async (pattern: string, prefix: string) => {
   pauseKeydown.value = true;
   atLoading.value = true;
@@ -393,27 +401,30 @@ const atHandleSearch = async (pattern: string, prefix: string) => {
       //   pauseKeydown.value = false;
       //   return;
       // }
-      atOptions.value = [[`x`, 'x d100'],].map((i) => {
-        return {
-          type: 'cmd',
-          value: i[0],
-          label: i[0],
-          data: {
-            "info": '/x 简易骰点指令，如：/x d100 (100面骰)'
-          }
-        }
-      });
 
-      for (let [id, data] of Object.entries(utils.botCommands)) {
-        for (let [k, v] of Object.entries(data)) {
-          atOptions.value.push({
+      if (chat.atOptionsOn) {
+        atOptions.value = [[`x`, 'x d100'],].map((i) => {
+          return {
             type: 'cmd',
-            value: k,
-            label: k,
+            value: i[0],
+            label: i[0],
             data: {
-              "info": `/${k} ` + (v as any).split('\n', 1)[0].replace(/^\.\S+/, '')
+              "info": '/x 简易骰点指令，如：/x d100 (100面骰)'
             }
-          })
+          }
+        });
+
+        for (let [id, data] of Object.entries(utils.botCommands)) {
+          for (let [k, v] of Object.entries(data)) {
+            atOptions.value.push({
+              type: 'cmd',
+              value: k,
+              label: k,
+              data: {
+                "info": `/${k} ` + (v as any).split('\n', 1)[0].replace(/^\.\S+/, '')
+              }
+            })
+          }
         }
       }
       break;
@@ -467,11 +478,13 @@ const avatarLongpress = (data: any) => {
 
 <template>
   <div class="flex flex-col h-full justify-between">
-    <div class="chat overflow-y-auto h-full px-4 pt-6" v-show="rows.length > 0" @scroll="onScroll" ref="messagesListRef">
+    <div class="chat overflow-y-auto h-full px-4 pt-6" v-show="rows.length > 0" @scroll="onScroll"
+      ref="messagesListRef">
       <!-- <VirtualList itemKey="id" :list="rows" :minSize="50" ref="virtualListRef" @scroll="onScroll"
               @toBottom="reachBottom" @toTop="reachTop"> -->
-      <template v-for="itemData in rows" :key="itemData.id">
-        <chat-item :avatar="itemData.member?.avatar || itemData.user?.avatar" :username="itemData.member?.nick || '小海豹'"
+      <template v-for="itemData in rows">
+        <!-- {{itemData}} -->
+        <chat-item :avatar="itemData.member?.avatar || itemData.user?.avatar" :username="itemData.member?.nick ?? '未知'"
           :content="itemData.content" :is-rtl="isMe(itemData)" :item="itemData"
           @avatar-longpress="avatarLongpress(itemData)" />
       </template>
@@ -550,10 +563,10 @@ const avatarLongpress = (data: any) => {
           </n-space>
         </div>
 
-        <n-mention type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyDown" ref="textInputRef"
-          class="chat-text" :placeholder="$t('inputBox.placeholder')" :options="atOptions" :loading="atLoading"
-          @search="atHandleSearch" @select="pauseKeydown = false" placement="top-start" :prefix="['@', '/', '.']"
-          :render-label="atRenderLabel">
+        <n-mention type="textarea" :rows="1" autosize v-model:value="textToSend" :on-keydown="keyDown"
+          ref="textInputRef" class="chat-text" :placeholder="$t('inputBox.placeholder')" :options="atOptions"
+          :loading="atLoading" @search="atHandleSearch" @select="pauseKeydown = false" placement="top-start"
+          :prefix="atPrefix" :render-label="atRenderLabel">
         </n-mention>
       </div>
       <div class="flex" style="align-items: end; padding-bottom: 1px;">

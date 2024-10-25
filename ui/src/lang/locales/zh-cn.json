@@ -1,12 +1,25 @@
 {
   "headText": "海豹尬聊",
   "channelListNew": "新建频道",
+
+  "channelType": {
+    "public": "公开",
+    "nonPublic": "非公开",
+    "private": "私聊"
+  },
+
   "dialoChannelgNew": {
     "title": "新建频道",
     "channelNamePlaceholder": "请输入频道名称",
     "channelNameHint": "频道名称不能为空",
     "positiveText": "确定",
-    "negativeText": "取消"
+    "negativeText": "取消",
+    "channelType": "频道类型",
+
+    "channelName": "频道名称",
+
+    "channelParent": "上级频道",
+    "channelParentSelect": "上级频道选择"
   },
   "inputBox": {
     "placeholder": "请输入...",

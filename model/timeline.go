@@ -36,7 +36,7 @@ func TimelineUpdate(userId string) {
 
 func updateTimelineByMention(userId, lastBeMentionedId string) (string, bool) {
 	var item MentionModel
-	db.Where("id = ?", lastBeMentionedId).First(&item)
+	db.Where("id = ?", lastBeMentionedId).Limit(1).Find(&item)
 
 	var items []MentionModel
 	createdAt := item.CreatedAt

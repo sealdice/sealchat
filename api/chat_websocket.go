@@ -203,38 +203,69 @@ func websocketWorks(app *fiber.App) {
 				}
 
 				if err == nil {
+					// 频道相关的非自设API基本都是改为不再需要传入guild_id
 					switch apiMsg.Api {
 					case "channel.create":
-						apiChannelCreate(ctx, msg, apiMsg.Echo)
+						apiWrap(ctx, msg, apiChannelCreate)
 						solved = true
 					case "channel.private.create":
 						// 私聊
-						apiChannelPrivateCreate(ctx, msg)
+						apiWrap(ctx, msg, apiChannelPrivateCreate)
 						solved = true
 					case "channel.list":
-						apiChannelList(ctx, msg)
+						apiWrap(ctx, msg, apiChannelList)
 						solved = true
-					case "channel.members_count":
-						apiChannelMemberCount(ctx, msg)
+
+					case "channel.members_count": // 自设API
+						apiWrap(ctx, msg, apiChannelMemberCount)
 						solved = true
+					case "channel.member.list.online": // 自设API: 获取频道内在线用户
+						apiWrap(ctx, msg, apiChannelMemberListOnline)
+						solved = true
+					case "channel.member.list": // 自设API: 获取频道成员
+						apiWrap(ctx, msg, apiChannelMemberList)
+						solved = true
+					case "channel.private.list": // 自设API：获取私聊频道
+						apiWrap(ctx, msg, apiFriendChannelList)
+						solved = true
+						// 获取好友: https://satori.js.org/zh-CN/resources/user.html
 					case "channel.enter":
-						apiChannelEnter(ctx, msg)
+						apiWrap(ctx, msg, apiChannelEnter)
 						solved = true
 					// case "guild.list":
 					//	 apiChannelList(c, msg, apiMsg.Echo)
 					//	 solved = true
-					case "message.create", "qqq.x":
-						apiMessageCreate(ctx, msg)
+
+					case "friend.request.list": // 自设api，获取申请加我的用户列表
+						apiWrap(ctx, msg, apiFriendRequestList)
+						solved = true
+					case "friend.request.sender.list": // 自设api，获取申请加我的用户列表
+						apiWrap(ctx, msg, apiFriendRequestSenderList)
+						solved = true
+					case "friend.request.create": // 自设api，添加好友
+						apiWrap(ctx, msg, apiFriendRequestCreate)
+						solved = true
+					case "friend.delete": // 自设api，删除好友
+						apiWrap(ctx, msg, apiFriendDelete)
+						solved = true
+					case "friend.approve":
+						apiWrap(ctx, msg, apiFriendRequestApprove)
+						solved = true
+
+					case "message.create":
+						apiWrap(ctx, msg, apiMessageCreate)
 						solved = true
 					case "message.delete":
-						apiMessageDelete(ctx, msg)
+						apiWrap(ctx, msg, apiMessageDelete)
 						solved = true
 					case "message.list":
-						apiMessageList(ctx, msg)
+						apiWrap(ctx, msg, apiMessageList)
 						solved = true
+
 					case "guild.member.list":
-						apiGuildMemberList(ctx, msg)
+						apiWrap(ctx, msg, apiGuildMemberList)
 						solved = true
+
 					case "bot.info.set_name":
 						apiBotInfoSetName(ctx, msg)
 						solved = true

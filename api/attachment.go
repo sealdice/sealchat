@@ -32,7 +32,7 @@ func UploadQuick(c *fiber.Ctx) error {
 
 	db := model.GetDB()
 	var item model.Attachment
-	db.Where("hash = ? and size = ?", hashBytes, body.Size).Find(&item)
+	db.Where("hash = ? and size = ?", hashBytes, body.Size).Limit(1).Find(&item)
 	if item.ID == "" {
 		return wrapError(c, nil, "此项数据无法进行快速上传")
 	}

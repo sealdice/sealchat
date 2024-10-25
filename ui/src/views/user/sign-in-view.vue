@@ -113,7 +113,7 @@ onMounted(async () => {
       <h2 class="font-bold text-xl mb-8">摸鱼中心</h2>
 
       <n-form ref="formRef" :model="model" :rules="rules" class="w-full px-8 max-w-md">
-        <n-form-item path="account" label="帐号">
+        <n-form-item path="account" label="用户名">
           <n-input v-model:value="model.account" @keydown.enter.prevent />
         </n-form-item>
 

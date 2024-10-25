@@ -2,12 +2,12 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
 import type { User, Opcode, GatewayPayloadStructure, Channel, EventName, Event, GuildMember } from '@satorijs/protocol'
-import type { APIChannelCreateResp, APIChannelListResp, APIMessage, SatoriMessage } from '@/types';
+import type { APIChannelCreateResp, APIChannelListResp, APIMessage, ChannelRoleModel, FriendInfo, FriendRequestModel, PaginationListResponse, SatoriMessage, SChannel, UserInfo, UserRoleModel } from '@/types';
 import { nanoid } from 'nanoid'
 import { groupBy } from 'lodash-es';
 import { Emitter } from '@/utils/event';
 import { useUserStore } from './user';
-import { urlBase } from './_config';
+import { api, urlBase } from './_config';
 import { useMessage } from 'naive-ui';
 import { memoizeWithTimeout } from '@/utils/tools';
 import type { MenuOptions } from '@imengyu/vue3-context-menu';
@@ -15,12 +15,16 @@ import type { MenuOptions } from '@imengyu/vue3-context-menu';
 interface ChatState {
   subject: WebSocketSubject<any> | null;
   // user: User,
-  channelTree: Channel[],
+  channelTree: SChannel[],
+  channelTreePrivate: SChannel[],
   curChannel: Channel | null,
   curMember: GuildMember | null,
   connectState: 'connecting' | 'connected' | 'disconnected' | 'reconnecting',
   iReconnectAfterTime: number,
   curReplyTo: SatoriMessage | null; // Message 会报错
+  curChannelUsers: User[],
+  sidebarTab: 'channels' | 'privateChats',
+  atOptionsOn: boolean,
 
   messageMenu: {
     show: boolean
@@ -53,11 +57,18 @@ export const useChatStore = defineStore({
     // user: { id: '1', },
     subject: null,
     channelTree: [] as any,
+    channelTreePrivate: [] as any,
     curChannel: null,
     curMember: null,
     connectState: 'connecting',
     iReconnectAfterTime: 0,
     curReplyTo: null,
+    curChannelUsers: [],
+
+    sidebarTab: 'channels',
+
+    // 太遮挡视线，先关闭了
+    atOptionsOn: false,
 
     messageMenu: {
       show: false,
@@ -180,7 +191,15 @@ export const useChatStore = defineStore({
         }, 10000)
       }
 
+      if (this.curChannel?.id) {
+        await this.channelSwitchTo(this.curChannel?.id);
+        const resp2 = await this.sendAPI('channel.member.list.online', { 'channel_id': this.curChannel?.id });
+        this.curChannelUsers = resp2.data.data;
+      }
       await this.channelList();
+      await this.ChannelPrivateList();
+      await this.channelMembersCountRefresh();
+
       if (_connectResolve) {
         _connectResolve();
         _connectResolve = null;
@@ -201,7 +220,7 @@ export const useChatStore = defineStore({
       this.curReplyTo = item;
     },
 
-    async sendAPI(api: string, data: APIMessage): Promise<any> {
+    async sendAPI<T = any>(api: string, data: APIMessage): Promise<T> {
       const echo = nanoid();
       return new Promise((resolve, reject) => {
         apiMap.set(echo, { resolve, reject });
@@ -218,30 +237,58 @@ export const useChatStore = defineStore({
       this.subject?.next(msg);
     },
 
-    async channelCreate(name: string) {
-      const resp = await this.sendAPI('channel.create', { name }) as APIChannelCreateResp;
+    async channelCreate(data: any) {
+      const resp = await this.sendAPI('channel.create', data) as APIChannelCreateResp;
     },
 
     async channelPrivateCreate(userId: string) {
-      return await this.sendAPI('channel.private.create', { 'user_id': userId });
+      const resp = await this.sendAPI('channel.private.create', { 'user_id': userId });
+      console.log('channel.private.create', resp);
+      return resp.data;
     },
 
     async channelSwitchTo(id: string) {
-      this.curChannel = this.channelTree.find(c => c.id === id) || this.curChannel;
+      let nextChannel = this.channelTree.find(c => c.id === id) ||
+        this.channelTree.flatMap(c => c.children || []).find(c => c.id === id);
+
+      if (!nextChannel) {
+        nextChannel = this.channelTreePrivate.find(c => c.id === id);
+      }
+      if (!nextChannel) {
+        alert('频道不存在');
+        return;
+      }
+
+      let oldChannel = this.curChannel;
+      this.curChannel = nextChannel;
       const resp = await this.sendAPI('channel.enter', { 'channel_id': id });
-      this.curMember = resp.member;
+      // console.log('switch', resp, this.curChannel);
+
+      if (!resp.data?.member) {
+        this.curChannel = oldChannel;
+        return false;
+      }
+
+      this.curMember = resp.data.member;
       localStorage.setItem('lastChannel', id);
+
+      const resp2 = await this.sendAPI('channel.member.list.online', { 'channel_id': id });
+      this.curChannelUsers = resp2.data.data;
+
       chatEvent.emit('channel-switch-to', undefined);
       this.channelList();
+      return true;
     },
 
     async channelList() {
       const resp = await this.sendAPI('channel.list', {}) as APIChannelListResp;
+      const d = resp.data;
+      const chns = d.data ?? [];
 
-      const curItem = resp.data.find(c => c.id === this.curChannel?.id);
+      const curItem = chns.find(c => c.id === this.curChannel?.id);
       this.curChannel = curItem || this.curChannel;
 
-      const groupedData = groupBy(resp.data, 'parentId');
+      const groupedData = groupBy(chns, 'parentId');
       const buildTree = (parentId: string): any => {
         const children = groupedData[parentId] || [];
         return children.map((child: Channel) => ({
@@ -260,7 +307,7 @@ export const useChatStore = defineStore({
         if (c) {
           this.channelSwitchTo(c.id);
         } else {
-          this.channelSwitchTo(tree[0].id);
+          if (tree[0]) this.channelSwitchTo(tree[0].id);
         }
       }
 
@@ -286,6 +333,10 @@ export const useChatStore = defineStore({
     async channelRefreshSetup() {
       setInterval(async () => {
         await this.channelMembersCountRefresh();
+        if (this.curChannel?.id) {
+          const resp2 = await this.sendAPI('channel.member.list.online', { 'channel_id': this.curChannel?.id });
+          this.curChannelUsers = resp2.data.data;
+        }
       }, 10000);
 
       setInterval(async () => {
@@ -295,7 +346,7 @@ export const useChatStore = defineStore({
 
     async messageList(channelId: string, next?: string) {
       const resp = await this.sendAPI('message.list', { channel_id: channelId, next });
-      return resp;
+      return resp.data;
     },
 
     async messageListDuring(channelId: string, fromTime: any, toTime: any) {
@@ -311,7 +362,7 @@ export const useChatStore = defineStore({
     async guildMemberListRaw(guildId: string, next?: string) {
       const resp = await this.sendAPI('guild.member.list', { guild_id: guildId, next });
       // console.log(resp)
-      return resp;
+      return resp.data;
     },
 
     async guildMemberList(guildId: string, next?: string) {
@@ -320,14 +371,95 @@ export const useChatStore = defineStore({
 
     async messageDelete(channel_id: string, message_id: string) {
       const resp = await this.sendAPI('message.delete', { channel_id, message_id });
-      return resp;
+      return resp.data;
     },
 
     async messageCreate(content: string, quote_id?: string) {
       // const resp = await this.sendAPI('message.create', { channel_id: this.curChannel?.id, content });
       const resp = await this.sendAPI('message.create', { channel_id: this.curChannel?.id, content, quote_id });
       // console.log(1111, resp)
+      return resp?.data;
+    },
+
+    // friend
+
+    async ChannelPrivateList() {
+      const resp = await this.sendAPI<{ data: { data: SChannel[] } }>('channel.private.list', {});
+      this.channelTreePrivate = resp?.data.data;
+      return resp?.data.data;
+    },
+
+    // 好友相关的API
+    // 获取试图加我好友的人
+    async friendRequestList() {
+      const resp = await this.sendAPI<{ data: { data: FriendRequestModel[] } }>('friend.request.list', {});
+      return resp?.data.data;
+    },
+
+    // 删除好友
+    async friendDelete(userId: string) {
+      const resp = await this.sendAPI<{ data: any }>('friend.delete', { 'user_id': userId });
+      return resp?.data;
+    },
+
+    // 获取我正在试图加好友的人
+    async friendRequestingList() {
+      const resp = await this.sendAPI<{ data: { data: FriendRequestModel[] } }>('friend.request.sender.list', {});
+      return resp?.data.data;
+    },
+
+    // 通过好友审批
+    async friendRequestApprove(requestId: string, accept = true) {
+      const resp = await this.sendAPI<{ data: boolean }>('friend.approve', {
+        "message_id": requestId,
+        "approve": accept,
+        // "comment"
+      });
+      return resp?.data;
+    },
+
+
+    async friendRequestCreate(senderId: string, receiverId: string, note: string = '') {
+      const resp = await this.sendAPI<{ data: { data: any } }>('friend.request.create', {
+        senderId,
+        receiverId,
+        note,
+      });
+      return resp?.data.data;
+    },
+
+    // 频道管理
+    async channelRoleList(id: string) {
+      const resp = await api.get<PaginationListResponse<ChannelRoleModel>>('api/v1/channel-role-list', { params: { id } });
       return resp;
+    },
+
+    // 频道管理
+    async channelMemberList(id: string) {
+      const resp = await api.get<PaginationListResponse<UserRoleModel>>('api/v1/channel-member-list', { params: { id } });
+      return resp;
+    },
+
+    // 添加用户角色
+    async userRoleLink(roleId: string, userIds: string[]) {
+      const resp = await api.post<{ data: boolean }>('api/v1/user-role-link', { roleId, userIds });
+      return resp?.data;
+    },
+
+    // 移除用户角色
+    async userRoleUnlink(roleId: string, userIds: string[]) {
+      const resp = await api.post<{ data: boolean }>('api/v1/user-role-unlink', { roleId, userIds });
+      return resp?.data;
+    },
+
+    async friendList() {
+      const resp = await api.get<PaginationListResponse<FriendInfo>>('api/v1/friend-list', {});
+      return resp?.data;
+    },
+
+    async botList() {
+      const resp = await api.get<PaginationListResponse<UserInfo>>('api/v1/bot-list', {});
+      return resp?.data;
     },
 
     async eventDispatch(e: Event) {
@@ -335,4 +467,3 @@ export const useChatStore = defineStore({
     }
   }
 });
-

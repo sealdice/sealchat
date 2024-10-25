@@ -12,6 +12,8 @@ func NewID() string {
 	return lo.Must1(gonanoid.Generate(defaultAlphabet, 22))
 }
 
-func NewIDWithLength(length int) string {
-	return lo.Must1(gonanoid.Generate(defaultAlphabet, length))
+var codeAlphabet = "123456789ABCDEFGHIJKLMNPQRSTUVWXYZ"
+
+func NewIDWithLength(len int) string {
+	return lo.Must1(gonanoid.Generate(defaultAlphabet, len))
 }

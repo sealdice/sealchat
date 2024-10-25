@@ -12,7 +12,7 @@ const active = ref(false)
 
 <template>
   <main class="h-screen">
-    <n-layout-header style="height: 4rem; padding: 24px" bordered>
+    <n-layout-header bordered>
       <chat-header />
     </n-layout-header>
 

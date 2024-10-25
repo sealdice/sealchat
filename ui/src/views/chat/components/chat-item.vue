@@ -9,6 +9,7 @@ import { useChatStore } from '@/stores/chat';
 import { useUtilsStore } from '@/stores/utils';
 import { Howl, Howler } from 'howler';
 import { useMessage } from 'naive-ui';
+import Avatar from '@/components/avatar.vue'
 
 const user = useUserStore();
 const chat = useChatStore();
@@ -115,7 +116,6 @@ const props = defineProps({
   content: String,
   avatar: String,
   isRtl: Boolean,
-  key: String,
   item: Object,
 })
 
@@ -161,8 +161,8 @@ onMounted(() => {
 <template>
   <div v-if="item?.is_revoked" class="py-4 text-center">一条消息已被撤回</div>
   <div v-else :id="item?.id" class="chat-item" :style="props.isRtl ? { direction: 'rtl' } : {}"
-    :class="props.isRtl ? ['is-rtl'] : []" :key="key">
-    <avatar :src="props.avatar" @longpress="emit('avatar-longpress')" @click="doAvatarClick" />
+    :class="props.isRtl ? ['is-rtl'] : []">
+    <Avatar :src="props.avatar" @longpress="emit('avatar-longpress')" @click="doAvatarClick" />
     <!-- <img class="rounded-md w-12 h-12 border-gray-500 border" :src="props.avatar" /> -->
     <!-- <n-avatar :src="imgAvatar" size="large" bordered>海豹</n-avatar> -->
     <div class="right">
@@ -176,7 +176,7 @@ onMounted(() => {
         </n-popover>
         <span v-if="props.isRtl" class="name">{{ props.item?.member?.nick }}</span>
 
-        <span v-if="!props.isRtl" class="name">{{ props.item?.member?.nick || '小海豹' }}</span>
+        <span v-if="!props.isRtl" class="name">{{ props.item?.member?.nick || '未知' }}</span>
         <n-popover trigger="hover" placement="bottom" v-if="!props.isRtl">
           <template #trigger>
             <span class="time">{{ timeText }}</span>

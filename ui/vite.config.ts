@@ -12,7 +12,7 @@ import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
 export default defineConfig({
   base: './',
   build: {
-    assetsInlineLimit: 0
+    assetsInlineLimit: 0,
   },
   plugins: [
     vue(),

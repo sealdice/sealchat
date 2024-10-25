@@ -27,7 +27,7 @@ const options = computed(() => [
     key: 'profile',
     // icon: renderIcon(UserIcon)
   },
-  user.info.role === 'role-admin' ? {
+  user.checkPerm('mod_admin') ? {
     label: t('headerMenu.admin'),
     key: 'admin',
     // icon: renderIcon(UserIcon)
@@ -165,9 +165,15 @@ const newChannel = async () => {
 </script>
 
 <template>
-  <div class="flex justify-between items-center">
+  <div class="flex justify-between items-center w-full px-2" style="height: 4rem;">
     <div>
-      <span class="text-sm font-bold sm:text-xl">{{ $t('headText') }}</span>
+      <div class="flex items-center">
+        <n-icon size="36" class="mr-2">
+          <img src="@/assets/head3.png" />
+        </n-icon>
+        <span class="text-sm font-bold sm:text-xl">{{ $t('headText') }}</span>
+      </div>
+
       <!-- <n-button>登录</n-button>
       <n-button>切换房间</n-button> -->
       <span class="ml-4 hidden">
@@ -178,7 +184,7 @@ const newChannel = async () => {
           <n-button text v-else>{{
             chat.curChannel?.name ? `${chat.curChannel?.name} (${(chat.curChannel as
               any).membersCount})`
-            : '加载中 ...' }} ▼</n-button>
+              : '加载中 ...' }} ▼</n-button>
         </n-dropdown>
       </span>
     </div>
@@ -187,7 +193,8 @@ const newChannel = async () => {
       <!-- ● -->
       <span v-if="chat.connectState === 'connecting'" class=" text-blue-500">{{ $t('connectState.connecting') }}</span>
       <span v-if="chat.connectState === 'connected'" class=" text-green-600">{{ $t('connectState.connected') }}</span>
-      <span v-if="chat.connectState === 'disconnected'" class=" text-red-500">{{ $t('connectState.disconnected') }}</span>
+      <span v-if="chat.connectState === 'disconnected'" class=" text-red-500">{{ $t('connectState.disconnected')
+        }}</span>
       <span v-if="chat.connectState === 'reconnecting'" class=" text-orange-400">{{ $t('connectState.reconnecting',
         [chat.iReconnectAfterTime]) }}</span>
 

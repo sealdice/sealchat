@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"sealchat/protocol"
-	"sealchat/utils"
 )
 
 type MemberModel struct {
@@ -39,13 +38,12 @@ func (m *MemberModel) UpdateRecentSent() {
 }
 
 func MemberGetByUserIDAndChannelIDBase(userId string, channelId string, defaultName string, createIfNotExists bool) (*MemberModel, error) {
-	db := GetDB()
 	var member MemberModel
-	err := db.Where("user_id = ? AND channel_id = ?", userId, channelId).First(&member).Error
-	if err != nil {
+	err := db.Where("user_id = ? AND channel_id = ?", userId, channelId).Limit(1).Find(&member).Error
+	if member.ID == "" {
 		// 未找到记录，尝试创建新的记录
 		if createIfNotExists {
-			x := MemberModel{StringPKBaseModel: StringPKBaseModel{ID: utils.NewID()}, UserID: userId, ChannelID: channelId, Nickname: defaultName}
+			x := MemberModel{UserID: userId, ChannelID: channelId, Nickname: defaultName}
 			err = db.Create(&x).Error
 			return &x, err
 		}

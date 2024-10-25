@@ -19,4 +19,10 @@ export const api = axiosFactory.create({
     silentJSONParsing: false
   },
   responseType: 'json',
-})
+});
+
+api.interceptors.request.use(config => {
+  config.headers['Authorization'] = localStorage.getItem('accessToken');
+  return config;
+});
+

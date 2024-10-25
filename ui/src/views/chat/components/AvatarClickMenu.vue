@@ -21,7 +21,8 @@ const clickTalkTo = async () => {
     if (data.user.id === user.info.id) return;
     const ch = await chat.channelPrivateCreate(data.user.id);
     if (ch?.channel?.id) {
-      await chat.channelList()
+      chat.sidebarTab = 'privateChats';
+      await chat.ChannelPrivateList()
       nextTick(async () => {
         await chat.channelSwitchTo(ch.channel.id);
       })

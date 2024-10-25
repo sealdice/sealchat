@@ -85,7 +85,7 @@ const feedbackWeburlShow = ref(false)
       <n-form-item label="服务地址" :feedback="feedbackServeAtShow ? '慎重填写，重启后生效' : ''">
         <n-input v-model:value="model.serveAt" @focus="feedbackServeAtShow = true" @blur="feedbackServeAtShow = false" />
       </n-form-item>
-      <n-form-item label="IP/域名" :feedback="feedbackAdminShow ? link : ''">
+      <n-form-item label="可访问地址" :feedback="feedbackAdminShow ? link : ''">
         <n-input v-model:value="model.domain" @focus="feedbackAdminShow = true" @blur="feedbackAdminShow = false" />
       </n-form-item>
       <n-form-item label="开放注册">

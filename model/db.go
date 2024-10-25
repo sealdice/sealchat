@@ -1,10 +1,16 @@
 package model
 
 import (
+	"github.com/glebarez/sqlite"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"strings"
 	"time"
 
-	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
+
+	_ "gorm.io/driver/mysql"
+	_ "gorm.io/driver/postgres"
 
 	"sealchat/utils"
 )
@@ -26,11 +32,37 @@ func (m *StringPKBaseModel) Init() {
 	m.DeletedAt = nil
 }
 
-func DBInit() {
+func (m *StringPKBaseModel) GetID() string {
+	return m.ID
+}
+
+func (m *StringPKBaseModel) BeforeCreate(tx *gorm.DB) error {
+	if m.ID == "" {
+		m.Init()
+	}
+	return nil
+}
+
+func DBInit(dsn string) {
 	var err error
-	db, err = gorm.Open(sqlite.Open("./data/chat.db"), &gorm.Config{})
-	// db.Exec("PRAGMA foreign_keys = ON") // 外键约束，不需要
-	db.Exec("PRAGMA journal_mode=WAL")
+	var dialector gorm.Dialector
+
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+		dialector = postgres.Open(dsn)
+	} else if strings.HasPrefix(dsn, "mysql://") || strings.Contains(dsn, "@tcp(") {
+		dialector = mysql.Open(dsn)
+	} else if strings.HasSuffix(dsn, ".db") || strings.HasPrefix(dsn, "file:") || strings.HasPrefix(dsn, ":memory:") {
+		dialector = sqlite.Open(dsn)
+	} else {
+		panic("无法识别的数据库类型，请检查DSN格式")
+	}
+
+	db, err = gorm.Open(dialector, &gorm.Config{})
+
+	switch dialector.(type) {
+	case *sqlite.Dialector: // SQLite 数据库
+		db.Exec("PRAGMA journal_mode=WAL")
+	}
 
 	if err != nil {
 		panic("连接数据库失败")
@@ -48,35 +80,20 @@ func DBInit() {
 	db.AutoMigrate(&UserEmojiModel{})
 	db.AutoMigrate(&BotTokenModel{})
 
-	isPermTableExists := db.Migrator().HasTable(&ChannelPermModel{})
-	db.AutoMigrate(&ChannelPermModel{})
+	db.AutoMigrate(&SystemRoleModel{}, &ChannelRoleModel{}, &RolePermissionModel{}, &UserRoleMappingModel{})
+	db.AutoMigrate(&FriendModel{}, &FriendRequestModel{})
 
-	if !isPermTableExists {
-		var items []*ChannelModel
-		db.Find(&items)
-
-		for _, i := range items {
-			db.Create(&ChannelPermModel{
-				StringPKBaseModel: StringPKBaseModel{
-					ID: utils.NewID(),
-				},
-				ChannelID: i.ID,
-				UserID:    ChannelPermUserALL,
-			})
-		}
-	}
-
-	// 初始化默认频道
-	var channelCount int64
-	db.Model(&ChannelModel{}).Count(&channelCount)
-	if channelCount == 0 {
-		db.Create(&ChannelModel{
-			StringPKBaseModel: StringPKBaseModel{
-				ID: utils.NewID(),
-			},
-			Name: "默认",
-		})
-	}
+	// // 初始化默认频道
+	// var channelCount int64
+	// db.Model(&ChannelModel{}).Count(&channelCount)
+	// if channelCount == 0 {
+	// 	db.Create(&ChannelModel{
+	// 		StringPKBaseModel: StringPKBaseModel{
+	// 			ID: utils.NewID(),
+	// 		},
+	// 		Name: "默认",
+	// 	})
+	// }
 }
 
 func GetDB() *gorm.DB {
@@ -84,6 +101,12 @@ func GetDB() *gorm.DB {
 }
 
 func FlushWAL() {
+	switch db.Dialector.(type) {
+	case *sqlite.Dialector: // SQLite 数据库，进行落盘
+	default:
+		return
+	}
+
 	_ = db.Exec("PRAGMA wal_checkpoint(TRUNCATE);")
 	_ = db.Exec("PRAGMA shrink_memory")
 }

@@ -5,6 +5,7 @@ type Channel struct {
 	Type     ChannelType `json:"type"`
 	Name     string      `json:"name"`
 	ParentID string      `json:"parent_id" gorm:"null"`
+	PermType string      `json:"permType"`
 }
 
 type ChannelType int

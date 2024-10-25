@@ -40,6 +40,7 @@ func (m *SyncMap[K, V]) LoadOrStore(key K, value V) (actual V, loaded bool) {
 	return a.(V), loaded
 }
 
+// Range return true to continue iteration
 func (m *SyncMap[K, V]) Range(f func(key K, value V) bool) {
 	m.m.Range(func(key, value any) bool { return f(key.(K), value.(V)) })
 }
@@ -75,4 +76,13 @@ func (m *SyncMap[K, V]) UnmarshalJSON(b []byte) error {
 		m.Store(k, v)
 	}
 	return nil
+}
+
+func (m *SyncMap[K, V]) Clear() {
+	m.m = sync.Map{}
+	// 好像go1.21之后有clear
+	// m.m.Range(func(key, value any) bool {
+	// 	m.m.Delete(key)
+	// 	return true
+	// })
 }

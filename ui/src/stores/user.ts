@@ -9,12 +9,15 @@ import { cloneDeep } from "lodash-es";
 import type { AxiosResponse } from "axios";
 import { api } from "./_config";
 import { useChatStore } from "./chat";
+import { PermResult, type PermCheckKey, type SystemRolePermSheet } from "@/types-perm";
 
 interface UserState {
   _accessToken: string
   info: UserInfo;
   lastCheckTime: number;
   emojiCount: number,
+
+  permSysMap: SystemRolePermSheet;
 }
 
 export const useUserStore = defineStore({
@@ -24,6 +27,8 @@ export const useUserStore = defineStore({
     _accessToken: '',
     lastCheckTime: 0,
     emojiCount: 1,
+
+    permSysMap: {} as any,
     // 这样比info?好的地方在于可以建立watch关联
     info: {
       id: "",
@@ -34,7 +39,7 @@ export const useUserStore = defineStore({
       nick: '',
       avatar: '',
       brief: '',
-      role: ''
+      disabled: false,
     },
   }),
 
@@ -74,19 +79,19 @@ export const useUserStore = defineStore({
 
       // 将 accessToken 存入 localStorage 中
       // Cookies.set('accessToken', accessToken, { expires: 7 })
-      localStorage.setItem('accessToken', accessToken)
+      localStorage.setItem('accessToken', accessToken);
 
       // 更新 state 中的 accessToken
-      this._accessToken = accessToken
+      this._accessToken = accessToken;
 
-      return resp
+      return resp;
     },
 
     async timelineList() {
       const resp = await api.get('api/v1/timeline-list', {
         headers: { 'Authorization': this.token }
-      })
-      return resp
+      });
+      return resp;
     },
 
     // 强制更新用户信息
@@ -94,7 +99,14 @@ export const useUserStore = defineStore({
       const resp = await api.get('api/v1/user-info', {
         headers: { 'Authorization': this.token }
       })
+
       this.info = resp.data.user as UserInfo;
+
+      let permSysMap: { [key: string]: number } = {};
+      for (let i of resp.data.permSys) {
+        permSysMap[i] = PermResult.ALLOWED;
+      }
+      this.permSysMap = permSysMap as any;
       return this.info;
     },
 
@@ -110,14 +122,12 @@ export const useUserStore = defineStore({
       if (now + this.lastCheckTime > 60 * 1000) {
         // 向服务器发请求
         try {
-          const resp = await api.get('api/v1/user-info', {
-            headers: { 'Authorization': this.token }
-          })
-          if (!this.info) {
+          const firstTime = !this.info;
+          await this.infoUpdate();
+          if (firstTime) {
             // 初次进入
             useChatStore().tryInit();
           }
-          this.info = resp.data.user as UserInfo;
           // console.log('check', this.info)
           this.lastCheckTime = Number(Date.now());
           return true;
@@ -192,6 +202,15 @@ export const useUserStore = defineStore({
         headers: { 'Authorization': user.token }
       });
       return resp;
+    },
+
+    // 满足任意一个即可，这个read是啥意思我也忘了
+    checkPerm(...keys: Array<PermCheckKey>) {
+      for (let key of keys) {
+        if (this.permSysMap[key] === PermResult.ALLOWED) {
+          return true;
+        }
+      }
     },
 
   },

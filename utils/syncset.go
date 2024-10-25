@@ -52,3 +52,12 @@ func (m *SyncSet[K]) UnmarshalJSON(b []byte) error {
 	}
 	return nil
 }
+
+func (m *SyncSet[K]) ToArray() []K {
+	var m2 []K
+	m.Range(func(key K) bool {
+		m2 = append(m2, key)
+		return true
+	})
+	return m2
+}

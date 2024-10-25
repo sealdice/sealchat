@@ -10,10 +10,10 @@ type MessageModel struct {
 	StringPKBaseModel
 	Content   string `json:"content"`
 	ChannelID string `json:"channel_id"`
-	GuildID   string `json:"guild_id" gorm:"null"`
-	MemberID  string `json:"member_id" gorm:"null"`
-	UserID    string `json:"user_id" gorm:"null"`
-	QuoteID   string `json:"quote_id" gorm:"null"`
+	GuildID   string `json:"guild_id" gorm:"null;size:100"`
+	MemberID  string `json:"member_id" gorm:"null;size:100"`
+	UserID    string `json:"user_id" gorm:"null;size:100"`
+	QuoteID   string `json:"quote_id" gorm:"null;size:100"`
 
 	IsRevoked bool `json:"is_revoked" gorm:"null"` // 被撤回。这样实现可能不很严肃，但是能填补窗口中空白
 

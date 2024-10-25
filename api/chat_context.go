@@ -5,6 +5,7 @@ import (
 
 	"sealchat/model"
 	"sealchat/protocol"
+	"sealchat/service"
 	"sealchat/utils"
 )
 
@@ -54,4 +55,25 @@ func (ctx *ChatContext) BroadcastEventInChannel(channelId string, data *protocol
 		})
 		return true
 	})
+}
+
+func (ctx *ChatContext) BroadcastEventInChannelForBot(channelId string, data *protocol.Event) {
+	// 获取频道下的bot
+	botIds := service.BotListByChannelId(channelId)
+
+	for _, id := range botIds {
+		if x, ok := ctx.UserId2ConnInfo.Load(id); ok {
+			x.Range(func(key *WsSyncConn, value *ConnInfo) bool {
+				_ = value.Conn.WriteJSON(struct {
+					protocol.Event
+					Op protocol.Opcode `json:"op"`
+				}{
+					// 协议规定: 事件中必须含有 channel，message，user
+					Event: *data,
+					Op:    protocol.OpEvent,
+				})
+				return true
+			})
+		}
+	}
 }

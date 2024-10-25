@@ -139,6 +139,21 @@ export const useUtilsStore = defineStore({
       return resp
     },
 
+    // 添加用户角色
+    async userRoleLinkByUserId(userId: string, roleIds: string[]) {
+      const user = useUserStore();
+      const resp = await api.post<{ data: boolean }>('api/v1/admin/user-role-link-by-user-id', { userId, roleIds }, {
+        headers: { 'Authorization': user.token },
+      });
+      return resp?.data;
+    },
+
+    // 移除用户角色
+    async userRoleUnlinkByUserId(userId: string, roleIds: string[]) {
+      const resp = await api.post<{ data: boolean }>('api/v1/admin/user-role-unlink-by-user-id', { userId, roleIds });
+      return resp?.data;
+    },
+
     async commandsRefresh() {
       const user = useUserStore();
       const resp = await api.get(`api/v1/commands`, {
