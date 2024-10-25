@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import dayjs from 'dayjs';
 import Element from '@satorijs/element'
-import { onMounted, ref, h } from 'vue';
+import { onMounted, ref, h, computed } from 'vue';
 import { urlBase } from '@/stores/_config';
 import DOMPurify from 'dompurify';
 import { useUserStore } from '@/stores/user';
@@ -156,6 +156,14 @@ onMounted(() => {
     timeText2.value = timeFormat2(props.item?.createdAt);
   }, 10000);
 })
+
+const nick = computed(() => {
+  if (props.item?.sender_member_name) {
+    return props.item?.sender_member_name;
+  }
+  return props.item?.member?.nick || props.item?.user?.name || '未知';
+});
+
 </script>
 
 <template>
@@ -174,9 +182,9 @@ onMounted(() => {
           </template>
           <span>{{ timeText2 }}</span>
         </n-popover>
-        <span v-if="props.isRtl" class="name">{{ props.item?.member?.nick }}</span>
+        <span v-if="props.isRtl" class="name">{{ nick }}</span>
 
-        <span v-if="!props.isRtl" class="name">{{ props.item?.member?.nick || '未知' }}</span>
+        <span v-if="!props.isRtl" class="name">{{ nick }}</span>
         <n-popover trigger="hover" placement="bottom" v-if="!props.isRtl">
           <template #trigger>
             <span class="time">{{ timeText }}</span>
@@ -289,6 +297,10 @@ onMounted(() => {
       @apply text-base mt-1 px-4 py-2 relative;
       @apply rounded bg-gray-200 text-gray-900;
     }
+  }
+
+  .content img {
+    max-width: min(36vw, 200px);
   }
 }
 </style>

@@ -6,10 +6,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"sealchat/model"
+	"sealchat/utils"
 )
 
 func UserEmojiAdd(c *fiber.Ctx) error {
-	db := model.GetDB()
 	ui := getCurUser(c)
 
 	var body struct {
@@ -21,12 +21,7 @@ func UserEmojiAdd(c *fiber.Ctx) error {
 		})
 	}
 
-	item := &model.UserEmojiModel{
-		AttachmentID: body.AttachmentId,
-		UserID:       ui.ID,
-	}
-	item.Init()
-	db.Create(item)
+	item, _ := model.UserEmojiCreate(ui.ID, body.AttachmentId)
 	return c.JSON(fiber.Map{
 		"item": item,
 	})
@@ -34,35 +29,14 @@ func UserEmojiAdd(c *fiber.Ctx) error {
 
 func UserEmojiDelete(c *fiber.Ctx) error {
 	db := model.GetDB()
-	item := &model.UserEmojiModel{}
-	item.Init()
-	db.Create(item)
+	db.Unscoped().Delete(&model.UserEmojiModel{}, "id = ?", c.Query("id"))
 	return nil
 }
 
 func UserEmojiList(c *fiber.Ctx) error {
-	// page := c.QueryInt("page", 1)
-	// pageSize := c.QueryInt("pageSize", 20)
-	db := model.GetDB()
+	ui := getCurUser(c)
 
-	var total int64
-	db.Model(&model.UserEmojiModel{}).Count(&total)
-
-	// 获取列表
-	var items []*model.UserEmojiModel
-	// offset := (page - 1) * pageSize
-	db.Order("created_at asc").
-		// Offset(offset).Limit(pageSize).
-		// Preload("User", func(db *gorm.DB) *gorm.DB {
-		//	return db.Select("id, username")
-		// }).
-		Find(&items)
-
-	// 返回JSON响应
-	return c.JSON(fiber.Map{
-		// "page":     page,
-		// "pageSize": pageSize,
-		"total": total,
-		"items": items,
+	return utils.APIPaginatedList(c, func(page, pageSize int) ([]*model.UserEmojiModel, int64, error) {
+		return model.UserEmojiList(ui.ID, 1, -1)
 	})
 }

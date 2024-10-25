@@ -111,7 +111,9 @@ export const useChatStore = defineStore({
       this.connectState = 'connecting';
 
       // 'ws://localhost:3212/ws/seal'
-      const subject = webSocket(`ws:${urlBase}/ws/seal`);
+      // const subject = webSocket(`ws:${urlBase}/ws/seal`);
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const subject = webSocket(`${protocol}${urlBase}/ws/seal`);
 
       let isReady = false;
 
@@ -418,14 +420,13 @@ export const useChatStore = defineStore({
       return resp?.data;
     },
 
-
     async friendRequestCreate(senderId: string, receiverId: string, note: string = '') {
-      const resp = await this.sendAPI<{ data: { data: any } }>('friend.request.create', {
+      const resp = await this.sendAPI<{ data: { status: number } }>('friend.request.create', {
         senderId,
         receiverId,
         note,
       });
-      return resp?.data.data;
+      return resp?.data;
     },
 
     // 频道管理

@@ -22,10 +22,10 @@ type UserModel struct {
 	Brief    string `json:"brief"`            // 简介
 	// Role     string `json:"role"`             // 权限
 
-	Username string `gorm:"index,unique;not null" json:"username"` // 用户名，唯一，非空
-	Password string `gorm:"not null" json:"-"`                     // 密码，非空
-	Salt     string `gorm:"not null" json:"-"`                     // 盐，非空
-	IsBot    bool   `gorm:"null" json:"is_bot"`                    // 是否是机器人
+	Username string `gorm:"index:idx_username,unique;not null" json:"username"` // 用户名，唯一，非空
+	Password string `gorm:"not null" json:"-"`                                  // 密码，非空
+	Salt     string `gorm:"not null" json:"-"`                                  // 盐，非空
+	IsBot    bool   `gorm:"null" json:"is_bot"`                                 // 是否是机器人
 
 	Disabled    bool              `json:"disabled"`
 	AccessToken *AccessTokenModel `gorm:"-" json:"-"`
@@ -46,6 +46,7 @@ func (u *UserModel) ToProtocolType() *protocol.User {
 		Nick:   u.Nickname,
 		Avatar: u.Avatar,
 		IsBot:  u.IsBot,
+		Name:   u.Username,
 	}
 }
 
@@ -212,7 +213,7 @@ func UserVerifyAccessToken(tokenString string) (*UserModel, error) {
 
 	// 查询用户
 	var user UserModel
-	if err := db.Where("id = ?", accessToken.UserID).First(&user).Error; err != nil {
+	if err := db.Where("id = ?", accessToken.UserID).Limit(1).Find(&user).Error; err != nil {
 		return nil, fmt.Errorf("user not found")
 	}
 
@@ -263,4 +264,25 @@ func UserBotList() ([]*UserModel, error) {
 		return nil, err
 	}
 	return bots, nil
+}
+
+// UsersDuplicateRemove 删除重复的用户，只保留最早的一个
+func UsersDuplicateRemove() error {
+	var users []UserModel
+	// 查找所有重复的用户名
+	if err := db.Select("username, MIN(created_at) as min_created_at").
+		Group("username").
+		Having("COUNT(*) > 1").
+		Find(&users).Error; err != nil {
+		return err
+	}
+	// 对每个重复的用户名进行处理
+	for _, user := range users {
+		// 删除除最早创建的记录之外的所有记录
+		if err := db.Unscoped().Where("username = ? AND created_at > ?", user.Username, user.CreatedAt).
+			Delete(&UserModel{}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }

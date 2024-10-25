@@ -2,11 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"gorm.io/gorm"
 	"strconv"
 	"time"
 
 	"github.com/samber/lo"
+	"gorm.io/gorm"
 
 	"sealchat/model"
 	"sealchat/protocol"
@@ -26,6 +26,12 @@ func apiWrap[T any, T2 any](ctx *ChatContext, msg []byte, solve func(ctx *ChatCo
 
 	ret, err := solve(ctx, data.Data)
 	if err != nil {
+		errMsg := err.Error()
+		_ = c.WriteJSON(&struct {
+			Echo string `json:"echo"`
+			Err  string `json:"err"`
+			Data any    `json:"data"`
+		}{ctx.Echo, errMsg, ret})
 		return
 	}
 

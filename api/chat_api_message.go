@@ -65,7 +65,7 @@ func apiMessageCreate(ctx *ChatContext, data *struct {
 	channelId := data.ChannelID
 
 	// 权限检查
-	if len(channelId) < 40 { // 注意，这不是一个好的区分方式
+	if len(channelId) < 30 { // 注意，这不是一个好的区分方式
 		// 群内
 		if !pm.CanWithChannelRole(ctx.User.ID, channelId, pm.PermFuncChannelTextSend, pm.PermFuncChannelTextSendAll) {
 			return nil, nil
@@ -114,6 +114,8 @@ func apiMessageCreate(ctx *ChatContext, data *struct {
 		MemberID:  member.ID,
 		QuoteID:   data.QuoteID,
 		Content:   content,
+
+		SenderMemberName: member.Nickname,
 	}
 	rows := db.Create(&m).RowsAffected
 
@@ -233,7 +235,7 @@ func apiMessageList(ctx *ChatContext, data *struct {
 
 	// 权限检查
 	channelId := data.ChannelID
-	if len(channelId) < 40 { // 注意，这不是一个好的区分方式
+	if len(channelId) < 30 { // 注意，这不是一个好的区分方式
 		// 群内
 		if !pm.CanWithChannelRole(ctx.User.ID, channelId, pm.PermFuncChannelRead, pm.PermFuncChannelReadAll) {
 			return nil, nil
@@ -271,7 +273,7 @@ func apiMessageList(ctx *ChatContext, data *struct {
 
 	q.Order("created_at desc").
 		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id, nickname, avatar, is_bot")
+			return db.Select("id, username, nickname, avatar, is_bot")
 		}).
 		Preload("Quote", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, content, created_at, user_id, is_revoked")

@@ -190,7 +190,7 @@ const getFilteredMemberList = (lst?: UserRoleModel[]) => {
             <MemberSelector v-if="i.id.endsWith('-member')" :memberList="friendList"
               :startSelectedList="getFilteredMemberList(filterMembersByChannelId(i.id))"
               @confirm="(lst, startLst) => selectedMembersSet(i, lst, startLst ?? [])" />
-            <MemberSelector v-if="i.id.endsWith('-bot')" :memberList="botList"
+            <MemberSelector v-else-if="i.id.endsWith('-bot')" :memberList="botList"
               :startSelectedList="getFilteredMemberList(filterMembersByChannelId(i.id))"
               @confirm="(lst, startLst) => selectedMembersSet(i, lst, startLst ?? [])" />
             <MemberSelector v-else :memberList="getFilteredMemberList(memberList?.items)"

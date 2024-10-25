@@ -12,6 +12,8 @@ export interface SatoriMessage {
   quote?: SatoriMessage;
   createdAt?: number;
   updatedAt?: number;
+
+  sender_member_name?: string;
 }
 
 export interface ServerConfig {

@@ -17,6 +17,8 @@ type MessageModel struct {
 
 	IsRevoked bool `json:"is_revoked" gorm:"null"` // 被撤回。这样实现可能不很严肃，但是能填补窗口中空白
 
+	SenderMemberName string `json:"sender_member_name"` // 用户在当时的名字
+
 	User   *UserModel    `json:"user"`   // 嵌套 User 结构体
 	Member *MemberModel  `json:"member"` // 嵌套 Member 结构体
 	Quote  *MessageModel `json:"quote"`  // 嵌套 Message 结构体

@@ -17,5 +17,7 @@ var (
 	PermFuncChannelReadAll     = gorbac.NewStdPermission("func_channel_read_all")      // 频道 - 查看所有子频道
 	PermFuncChannelTextSendAll = gorbac.NewStdPermission("func_channel_text_send_all") // 频道 - 文字 - 发送
 
+	PermFuncChannelManageMute = gorbac.NewStdPermission("func_channel_manage_mute") // 频道 - 禁言权限
+
 	PermFuncChannelSubChannelCreate = gorbac.NewStdPermission("func_channel_sub_channel_create") // 频道 - 创建子频道
 )

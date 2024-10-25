@@ -67,6 +67,11 @@ func DBInit(dsn string) {
 	if err != nil {
 		panic("连接数据库失败")
 	}
+
+	if db.Migrator().HasTable(&UserModel{}) {
+		_ = UsersDuplicateRemove()
+	}
+
 	db.AutoMigrate(&ChannelModel{})
 	db.AutoMigrate(&GuildModel{})
 	db.AutoMigrate(&MessageModel{})

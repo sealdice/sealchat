@@ -326,6 +326,13 @@ const onScroll = (evt: any) => {
 const pauseKeydown = ref(false);
 const keyDown = function (e: KeyboardEvent) {
   if (pauseKeydown.value) return;
+
+  // 检查是否为移动端
+  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    // 如果是移动端,直接返回,不执行后续代码
+    return;
+  }
+  
   if (e.key === 'Enter' && (!e.ctrlKey) && (!e.shiftKey)) {
     send();
     e.preventDefault();

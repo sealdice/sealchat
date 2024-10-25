@@ -70,11 +70,16 @@ func apiFriendRequestCreate(ctx *ChatContext, data *struct {
 		ReceiverID: data.ReceiverID,
 		Note:       data.Note,
 	})
-
+	status := 0
+	if err != nil {
+		status = -1
+	}
 	return &struct {
-		Message string
+		Message string `json:"message"`
+		Status  int    `json:"status"`
 	}{
 		Message: "ok",
+		Status:  status,
 	}, err
 }
 

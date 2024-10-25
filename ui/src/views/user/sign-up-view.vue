@@ -73,7 +73,7 @@ onMounted(async () => {
             <div class="relative">
               <input v-model="form.username"
                 class="block w-full px-4 py-2 mt-2 text-gray-700 placeholder-gray-500 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-opacity-40 focus:outline-none focus:ring focus:ring-blue-300"
-                type="username" placeholder="用户名，用于登录" aria-label="用户名" />
+                type="username" placeholder="用户名，用于登录和识别，可被其他人看到" aria-label="用户名" />
               <button @click.prevent="randomUsername"
                 class="absolute right-0 h-full top-0 px-1 mr-1 text-sm font-medium text-blue-500 capitalize" tabindex="-1">随机
               </button>

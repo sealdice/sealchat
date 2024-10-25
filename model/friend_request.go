@@ -1,5 +1,10 @@
 package model
 
+import (
+	"errors"
+	"gorm.io/gorm"
+)
+
 // FriendRequestModel 好友邀请表
 type FriendRequestModel struct {
 	StringPKBaseModel
@@ -21,7 +26,31 @@ func FriendRequestCreate(invite *FriendRequestModel) error {
 	if invite.Status == "" {
 		invite.Status = "pending"
 	}
+
+	fr, _ := FriendRequestGetBySenderReceiverStatus(invite.SenderID, invite.ReceiverID, invite.Status)
+	if fr.ID != "" {
+		return errors.New("exists")
+	}
+
+	if fr := FriendRelationGet(invite.SenderID, invite.ReceiverID); fr.IsFriend {
+		return errors.New("already friend")
+	}
+
 	return db.Create(invite).Error
+}
+
+// FriendRequestGetBySenderReceiverStatus 根据发送者、接收者和状态查询一条好友请求记录
+func FriendRequestGetBySenderReceiverStatus(senderID, receiverID, status string) (*FriendRequestModel, error) {
+	var friendRequest FriendRequestModel
+	result := db.Where("sender_id = ? AND receiver_id = ? AND status = ?", senderID, receiverID, status).
+		Limit(1).Find(&friendRequest)
+	if result.Error != nil {
+		return &friendRequest, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return &friendRequest, gorm.ErrRecordNotFound
+	}
+	return &friendRequest, nil
 }
 
 func FriendRequestSetApprove(ID string, approve bool) bool {

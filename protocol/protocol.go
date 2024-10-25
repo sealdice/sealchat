@@ -37,12 +37,13 @@ type User struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
 	Nick          string `json:"nick"`
-	UserID        string // Deprecated
-	Username      string // Deprecated
-	Nickname      string // Deprecated
 	Avatar        string `json:"avatar"`
 	Discriminator string `json:"discriminator"`
 	IsBot         bool   `json:"is_bot"`
+
+	// UserID        string // Deprecated
+	// Username      string // Deprecated
+	// Nickname      string // Deprecated
 }
 
 type GuildMember struct {

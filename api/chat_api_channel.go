@@ -121,7 +121,7 @@ func apiChannelEnter(ctx *ChatContext, data *struct {
 	channelId := data.ChannelId
 
 	// 权限检查
-	if len(channelId) < 40 { // 注意，这不是一个好的区分方式
+	if len(channelId) < 30 { // 注意，这不是一个好的区分方式
 		// 群内
 		if !pm.CanWithChannelRole(ctx.User.ID, channelId, pm.PermFuncChannelRead, pm.PermFuncChannelReadAll) {
 			return nil, nil

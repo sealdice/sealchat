@@ -58,8 +58,8 @@ func (ctx *ChatContext) BroadcastEventInChannel(channelId string, data *protocol
 }
 
 func (ctx *ChatContext) BroadcastEventInChannelForBot(channelId string, data *protocol.Event) {
-	// 获取频道下的bot
-	botIds := service.BotListByChannelId(channelId)
+	// 获取频道下的bot，这样做的原因是，bot实际上没有进入channel这个行为，所以需要主动推送
+	botIds := service.BotListByChannelId(ctx.User.ID, channelId)
 
 	for _, id := range botIds {
 		if x, ok := ctx.UserId2ConnInfo.Load(id); ok {
