@@ -31,13 +31,13 @@ func UploadQuick(c *fiber.Ctx) error {
 	}
 
 	db := model.GetDB()
-	var item model.Attachment
+	var item model.AttachmentModel
 	db.Where("hash = ? and size = ?", hashBytes, body.Size).Limit(1).Find(&item)
 	if item.ID == "" {
 		return wrapError(c, nil, "此项数据无法进行快速上传")
 	}
 
-	_, newItem := model.AttachmentCreate(&model.Attachment{
+	_, newItem := model.AttachmentCreate(&model.AttachmentModel{
 		Filename:  item.Filename,
 		Size:      item.Size,
 		Hash:      hashBytes,
@@ -109,7 +109,7 @@ func Upload(c *fiber.Ctx) error {
 			_ = appFs.Remove(tempFile.Name())
 		}
 
-		model.AttachmentCreate(&model.Attachment{
+		model.AttachmentCreate(&model.AttachmentModel{
 			Filename:  file.Filename,
 			Size:      file.Size,
 			Hash:      hashCode,
@@ -134,7 +134,7 @@ func Upload(c *fiber.Ctx) error {
 }
 
 func AttachmentList(c *fiber.Ctx) error {
-	var items []*model.Attachment
+	var items []*model.AttachmentModel
 	user := getCurUser(c)
 	model.GetDB().Where("user_id = ?", user.ID).Select("id, created_at, hash").Find(&items)
 

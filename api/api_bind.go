@@ -74,6 +74,12 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	v1Auth.Post("/upload", Upload)
 	v1Auth.Post("/upload-quick", UploadQuick)
 	v1Auth.Get("/attachments-list", AttachmentList)
+
+	v1Auth.Post("/attachment-upload", AttachmentUploadTempFile)
+	v1Auth.Post("/attachment-upload-quick", AttachmentUploadQuick)
+	v1Auth.Post("/attachment-confirm", AttachmentSetConfirm)
+	v1Auth.Post("/attachments-delete", AttachmentDelete)
+
 	v1Auth.Get("/commands", func(c *fiber.Ctx) error {
 		m := map[string](map[string]string){}
 		commandTips.Range(func(key string, value map[string]string) bool {

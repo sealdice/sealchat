@@ -1,16 +1,14 @@
 package model
 
 import (
-	"github.com/glebarez/sqlite"
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
 	"strings"
 	"time"
 
+	// "github.com/glebarez/sqlite"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-
-	_ "gorm.io/driver/mysql"
-	_ "gorm.io/driver/postgres"
 
 	"sealchat/utils"
 )
@@ -78,7 +76,7 @@ func DBInit(dsn string) {
 	db.AutoMigrate(&UserModel{})
 	db.AutoMigrate(&AccessTokenModel{})
 	db.AutoMigrate(&MemberModel{})
-	db.AutoMigrate(&Attachment{})
+	db.AutoMigrate(&AttachmentModel{})
 	db.AutoMigrate(&MentionModel{})
 	db.AutoMigrate(&TimelineModel{})
 	db.AutoMigrate(&TimelineUserLastRecordModel{})
