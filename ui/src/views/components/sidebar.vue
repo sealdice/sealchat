@@ -3,6 +3,7 @@ import router from '@/router';
 import { useChatStore } from '@/stores/chat';
 import { useUserStore } from '@/stores/user';
 import { Plus } from '@vicons/tabler';
+import { Menu, SettingsSharp } from '@vicons/ionicons5';
 import { NIcon, useDialog, useMessage } from 'naive-ui';
 import { computed, ref, type Component, h, defineAsyncComponent, watch, onMounted } from 'vue';
 import Notif from '../notif.vue'
@@ -162,8 +163,8 @@ const suffix = (item: SChannel) => {
 </script>
 
 <template>
-  <div class="w-full ">
-    <n-tabs type="segment" v-model:value="chat.sidebarTab">
+  <div class="w-full h-full sc-sidebar sc-sidebar-fill">
+    <n-tabs type="segment" v-model:value="chat.sidebarTab" tab-class="sc-sidebar-fill" pane-class="sc-sidebar-fill">
       <n-tab-pane name="channels" tab="频道">
         <!-- 频道列表内容将在这里显示 -->
         <div class="space-y-1 flex flex-col px-2">
@@ -188,16 +189,30 @@ const suffix = (item: SChannel) => {
                 </div>
 
                 <div class="right">
-                  <n-dropdown trigger="click" :options="[
-                    { label: '进入', key: 'enter', item: i },
-                    { label: '添加子频道', key: 'addSubChannel', show: !Boolean(i.parentId), item: i },
-                    { label: '频道管理', key: 'manage', item: i },
-                    { label: '退出', key: 'leave', item: i, show: i.permType === 'non-public' },
-                    { label: '解散', key: 'dissolve', item: i, }
-                  ]" @select="handleSelect">
-                    <n-button text @click.stop class="">设置</n-button>
-                  </n-dropdown>
+                  <div class="flex justify-center space-x-1">
+                    <n-dropdown trigger="click" :options="[
+                      { label: '进入', key: 'enter', item: i },
+                      { label: '添加子频道', key: 'addSubChannel', show: !Boolean(i.parentId), item: i },
+                      { label: '频道管理', key: 'manage', item: i },
+                      { label: '退出', key: 'leave', item: i, show: i.permType === 'non-public' },
+                      { label: '解散', key: 'dissolve', item: i, }
+                    ]" @select="handleSelect">
+                      <n-button text @click.stop quaternary circle size="tiny">
+                        <template #icon>
+                          <n-icon>
+                            <Menu />
+                          </n-icon>
+                        </template>
+                      </n-button>
+                    </n-dropdown>
+                    <n-button quaternary circle size="tiny" @click.stop="handleSelect('manage', { item: i })">
+                      <template #icon>
+                        <SettingsSharp />
+                      </template>
+                    </n-button>
+                  </div>
                 </div>
+
               </div>
 
               <!-- 当前频道的用户列表 -->
@@ -220,14 +235,30 @@ const suffix = (item: SChannel) => {
                       </template>
                     </div>
                     <div class="right">
-                      <n-dropdown trigger="click" :options="[
-                        { label: '进入', key: 'enter', item: child },
-                        { label: '频道管理', key: 'manage', item: child },
-                        { label: '退出', key: 'leave', item: i, show: i.permType === 'non-public' },
-                        { label: '解散', key: 'dissolve', item: i, }
-                      ]" @select="handleSelect">
-                        <n-button text @click.stop class="">设置</n-button>
-                      </n-dropdown>
+
+                      <div class="flex justify-center space-x-1">
+                        <n-dropdown trigger="click" :options="[
+                          { label: '进入', key: 'enter', item: child },
+                          { label: '频道管理', key: 'manage', item: child },
+                          { label: '退出', key: 'leave', item: i, show: i.permType === 'non-public' },
+                          { label: '解散', key: 'dissolve', item: i, }
+                        ]" @select="handleSelect">
+                          <n-button text @click.stop quaternary circle size="tiny">
+                            <template #icon>
+                              <n-icon>
+                                <Menu />
+                              </n-icon>
+                            </template>
+                          </n-button>
+                        </n-dropdown>
+
+                        <n-button quaternary circle size="tiny" @click.stop="handleSelect('manage', { item: i })">
+                          <template #icon>
+                            <SettingsSharp />
+                          </template>
+                        </n-button>
+                      </div>
+
                     </div>
                   </div>
 
@@ -299,7 +330,7 @@ const suffix = (item: SChannel) => {
   @apply rounded px-2 py-2 cursor-pointer flex justify-between;
 
   &:hover {
-    @apply bg-blue-50;
+    @apply bg-blue-100;
 
     >.right {
       @apply block;
@@ -307,7 +338,7 @@ const suffix = (item: SChannel) => {
   }
 
   &.active {
-    @apply bg-blue-100;
+    @apply bg-blue-200;
 
   }
 

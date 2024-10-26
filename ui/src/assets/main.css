@@ -10,6 +10,22 @@ html, body {
   overflow: hidden;
 }
 
+.n-scrollbar-content {
+  height: 100%;
+}
+
 .text-more {
   @apply text-ellipsis whitespace-nowrap overflow-hidden;
 }
+
+.sc-sidebar-fill {
+  @apply bg-gray-100;
+}
+
+.sc-sidebar {
+  .n-tabs-rail {
+    @apply bg-gray-100 !important;
+  }  
+}
+
+/* .sc-header {} */

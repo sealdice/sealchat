@@ -29,8 +29,30 @@ func UserEmojiAdd(c *fiber.Ctx) error {
 
 func UserEmojiDelete(c *fiber.Ctx) error {
 	db := model.GetDB()
-	db.Unscoped().Delete(&model.UserEmojiModel{}, "id = ?", c.Query("id"))
-	return nil
+	var reqBody struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.BodyParser(&reqBody); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "无效的请求参数",
+		})
+	}
+	ids := reqBody.IDs
+	if len(ids) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "ID列表不能为空",
+		})
+	}
+	result := db.Unscoped().Delete(&model.UserEmojiModel{}, "id IN ?", ids)
+	if result.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "删除表情失败",
+		})
+	}
+	return c.JSON(fiber.Map{
+		"message": "表情删除成功",
+		"count":   result.RowsAffected,
+	})
 }
 
 func UserEmojiList(c *fiber.Ctx) error {

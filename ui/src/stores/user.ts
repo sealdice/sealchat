@@ -188,9 +188,9 @@ export const useUserStore = defineStore({
       return resp;
     },
 
-    async emojiDelete(id: string) {
+    async emojiDelete(ids: string[]) {
       const user = useUserStore();
-      const resp = await api.post('api/v1/user-emoji-delete', { id }, {
+      const resp = await api.post('api/v1/user-emoji-delete', { ids }, {
         headers: { 'Authorization': user.token }
       });
       return resp;

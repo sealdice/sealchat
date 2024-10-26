@@ -24,6 +24,8 @@ import { contentEscape } from '@/utils/tools'
 import IconNumber from '@/components/icons/IconNumber.vue'
 import { computedAsync } from '@vueuse/core';
 import type { UserEmojiModel } from '@/types';
+import { Settings } from '@vicons/ionicons5';
+import { dialogAskConfirm } from '@/utils/dialog';
 
 // const uploadImages = useObservable<Thumb[]>(
 //   liveQuery(() => db.thumbs.toArray()) as any
@@ -332,7 +334,7 @@ const keyDown = function (e: KeyboardEvent) {
     // 如果是移动端,直接返回,不执行后续代码
     return;
   }
-  
+
   if (e.key === 'Enter' && (!e.ctrlKey) && (!e.shiftKey)) {
     send();
     e.preventDefault();
@@ -472,8 +474,10 @@ const reachTop = throttle(async (evt: any) => {
 }, 1000)
 
 const sendEmoji = throttle((i: UserEmojiModel) => {
-  chat.messageCreate(`<img src="id:${i.attachmentId}" />`)
-}, 1000)
+  chat.messageCreate(`<img src="id:${i.attachmentId}" />`);
+  emojiPopoverShow.value = false;
+  toBottom();
+}, 1000);
 
 const avatarLongpress = (data: any) => {
   if (data.user) {
@@ -481,6 +485,26 @@ const avatarLongpress = (data: any) => {
     textInputRef.value?.focus();
   }
 }
+
+const selectedEmojiIds = ref<string[]>([]);
+
+const emojiSelectedDelete = async () => {
+  if (!await dialogAskConfirm(dialog)) return;
+
+  if (selectedEmojiIds.value.length > 0) {
+    await user.emojiDelete(selectedEmojiIds.value);
+    // 例如：调用API删除表情，然后更新本地状态
+    console.log('删除选中的表情：', selectedEmojiIds.value);
+    // 删除后清空选中状态
+    selectedEmojiIds.value = [];
+    user.emojiCount++;
+  } else {
+    console.log('没有选中的表情可删除');
+  }
+}
+
+const emojiPopoverShow = ref(false);
+const isManagingEmoji = ref(false);
 </script>
 
 <template>
@@ -538,7 +562,7 @@ const avatarLongpress = (data: any) => {
       <div class="flex justify-between relative w-full">
         <!-- 输入框左侧按钮，因为n-mention不支持#prefix和#suffix，所以单独拿出来了 -->
         <div class="absolute" style="z-index: 1; left: 0.5rem; top: .55rem;">
-          <n-popover trigger="click">
+          <n-popover v-model:show="emojiPopoverShow" trigger="click">
             <template #trigger>
               <n-button text>
                 <template #icon>
@@ -546,12 +570,57 @@ const avatarLongpress = (data: any) => {
                 </template>
               </n-button>
             </template>
-            <div class="text-base">{{ $t('inputBox.emojiTitle') }}</div>
-            <div class="grid grid-cols-4 gap-4">
-              <div v-for="i in uploadImages" @click="sendEmoji(i)">
-                <img :src="getSrc(i)" style="width: 4.8rem; height: 4.8rem; object-fit: contain;" />
-              </div>
+
+            <div class="flex justify-between items-center">
+              <div class="text-base mb-1">{{ $t('inputBox.emojiTitle') }}</div>
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <n-button text size="small" @click="isManagingEmoji = !isManagingEmoji">
+                    <template #icon>
+                      <n-icon :component="Settings" />
+                    </template>
+                  </n-button>
+                </template>
+                表情管理
+              </n-tooltip>
             </div>
+
+            <div v-if="!uploadImages?.length" class="flex justify-center w-full py-4 px-4">
+              <div class="w-56">当前没有收藏的表情，可以在聊天窗口的图片上<b class="px-1">长按</b>或<b class="px-1">右键</b>添加</div>
+            </div>
+
+            <template v-else>
+              <template v-if="isManagingEmoji">
+                <n-checkbox-group v-model:value="selectedEmojiIds">
+                  <div class="grid grid-cols-4 gap-4 pt-2 pb-4">
+                    <div class="cursor-pointer" v-for="i in uploadImages" :key="i.id">
+                      <n-checkbox :value="i.id" class="mt-2">
+                        <img :src="getSrc(i)"
+                          style="width: 4.8rem; height: 4.8rem; object-fit: contain; cursor: pointer;" />
+                      </n-checkbox>
+                    </div>
+                  </div>
+                </n-checkbox-group>
+
+                <div class="flex justify-end space-x-2 mb-4">
+                  <n-button type="info" size="small" @click="emojiSelectedDelete" :disabled="selectedEmojiIds.length === 0">
+                    删除选中
+                  </n-button>
+                  <n-button type="default" size="small" @click="() => { isManagingEmoji = false; selectedEmojiIds = []; }" class="mr-2">
+                    退出管理
+                  </n-button>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="grid grid-cols-4 gap-4 pt-2 pb-4">
+                  <div class="cursor-pointer" v-for="i in uploadImages" :key="i.id">
+                    <img @click="sendEmoji(i)" :src="getSrc(i)"
+                      style="width: 4.8rem; height: 4.8rem; object-fit: contain;" />
+                  </div>
+                </div>
+              </template>
+            </template>
           </n-popover>
         </div>
 
@@ -607,6 +676,10 @@ const avatarLongpress = (data: any) => {
   &>div {
     margin-bottom: -1rem;
   }
+}
+
+.chat-text>.n-input>.n-input-wrapper {
+  @apply bg-gray-200;
 }
 
 .chat-text>.n-input>.n-input-wrapper {

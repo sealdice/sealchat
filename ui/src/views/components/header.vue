@@ -1,5 +1,4 @@
 <script setup lang="tsx">
-import router from '@/router';
 import { useChatStore } from '@/stores/chat';
 import { useUserStore } from '@/stores/user';
 import { Plus } from '@vicons/tabler';
@@ -165,7 +164,7 @@ const newChannel = async () => {
 </script>
 
 <template>
-  <div class="flex justify-between items-center w-full px-2" style="height: 4rem;">
+  <div class="sc-header border-b flex justify-between items-center w-full px-2" style="height: 4rem;">
     <div>
       <div class="flex items-center">
         <n-icon size="36" class="mr-2">
