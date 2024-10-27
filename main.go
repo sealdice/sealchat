@@ -58,15 +58,6 @@ func main() {
 	}()
 
 	pm.Init()
-	// model.UserRoleMappingCreate(&model.UserRoleMappingModel{
-	// 	UserID:   "e6ww4e_jUU9LXOKjo3h3z",
-	// 	RoleID:   "sys-admin",
-	// 	RoleType: "system",
-	// })
-
-	// perm := pm.GetAllSysPermByUid("e6ww4e_jUU9LXOKjo3h3z")
-	// x, err := json.Marshal(perm)
-	// fmt.Println(string((x)), err)
 
 	autoSave := func() {
 		t := time.NewTicker(3 * 60 * time.Second)

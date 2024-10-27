@@ -82,10 +82,8 @@ func FriendRelationGet(userID1, userID2 string) *FriendModel {
 	item := FriendModel{}
 	db.Model(&FriendModel{}).Where("user_id1 = ? and user_id2 = ?", userID1, userID2).
 		Limit(1).Find(&item)
-	if item.ID != "" {
-		return &item
-	}
-	return nil
+
+	return &item
 }
 
 // FriendRelationFriendApprove 设置为好友

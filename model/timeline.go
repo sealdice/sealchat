@@ -16,7 +16,7 @@ func (*TimelineUserLastRecordModel) TableName() string {
 
 func TimelineUpdate(userId string) {
 	item := &TimelineUserLastRecordModel{}
-	db.Where("id = ?", userId).First(&item)
+	db.Where("id = ?", userId).Limit(1).Find(&item)
 
 	// 如果没有记录，就创建一条
 	if item.ID == "" {

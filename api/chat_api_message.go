@@ -275,12 +275,15 @@ func apiMessageList(ctx *ChatContext, data *struct {
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, username, nickname, avatar, is_bot")
 		}).
-		Preload("Quote", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id, content, created_at, user_id, is_revoked")
-		}).
 		Preload("Member", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, nickname, channel_id")
 		}).Limit(30).Find(&items)
+
+	utils.QueryOneToManyMap(model.GetDB(), items, func(i *model.MessageModel) []string {
+		return []string{i.QuoteID}
+	}, func(i *model.MessageModel, x []*model.MessageModel) {
+		i.Quote = x[0]
+	}, "id, content, created_at, user_id, is_revoked")
 
 	q.Count(&count)
 	var next string

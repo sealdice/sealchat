@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"regexp"
+	"sealchat/utils"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -74,6 +75,13 @@ func UserSignup(c *fiber.Ctx) error {
 	if count == 0 {
 		// 首个用户，设置为管理员
 		_, _ = service.UserRoleLink([]string{"sys-admin"}, []string{user.ID})
+
+		// 创建默认房间
+		var channelCount int64
+		model.GetDB().Model(&model.ChannelModel{}).Count(&channelCount)
+		if channelCount == 0 {
+			_ = service.ChannelNew(utils.NewID(), "public", "公共休息室", user.ID, "")
+		}
 	} else {
 		_, _ = service.UserRoleLink([]string{"sys-user"}, []string{user.ID})
 	}

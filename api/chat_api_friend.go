@@ -101,8 +101,16 @@ func apiFriendRequestApprove(ctx *ChatContext, data *struct {
 		if model.FriendRequestSetApprove(req.ID, data.Approve) {
 			// 建立联系
 			ok, _ := model.FriendRelationFriendApprove(req.SenderID, req.ReceiverID)
+
+			if ok {
+				ch, _ := model.ChannelPrivateGet(req.SenderID, req.ReceiverID)
+				if ch.ID == "" {
+					model.ChannelPrivateNew(req.SenderID, req.ReceiverID)
+				}
+			}
 			return ok, nil
 		}
+
 	}
 
 	return false, nil

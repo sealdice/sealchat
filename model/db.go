@@ -48,6 +48,7 @@ func DBInit(dsn string) {
 	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
 		dialector = postgres.Open(dsn)
 	} else if strings.HasPrefix(dsn, "mysql://") || strings.Contains(dsn, "@tcp(") {
+		dsn = strings.TrimLeft(dsn, "mysql://")
 		dialector = mysql.Open(dsn)
 	} else if strings.HasSuffix(dsn, ".db") || strings.HasPrefix(dsn, "file:") || strings.HasPrefix(dsn, ":memory:") {
 		dialector = sqlite.Open(dsn)
@@ -70,6 +71,11 @@ func DBInit(dsn string) {
 		_ = UsersDuplicateRemove()
 	}
 
+	if db.Migrator().HasTable(&MessageModel{}) {
+		// 删除外键约束
+		_ = db.Migrator().DropConstraint(&MessageModel{}, "fk_messages_quote")
+	}
+
 	db.AutoMigrate(&ChannelModel{})
 	db.AutoMigrate(&GuildModel{})
 	db.AutoMigrate(&MessageModel{})
@@ -85,18 +91,6 @@ func DBInit(dsn string) {
 
 	db.AutoMigrate(&SystemRoleModel{}, &ChannelRoleModel{}, &RolePermissionModel{}, &UserRoleMappingModel{})
 	db.AutoMigrate(&FriendModel{}, &FriendRequestModel{})
-
-	// // 初始化默认频道
-	// var channelCount int64
-	// db.Model(&ChannelModel{}).Count(&channelCount)
-	// if channelCount == 0 {
-	// 	db.Create(&ChannelModel{
-	// 		StringPKBaseModel: StringPKBaseModel{
-	// 			ID: utils.NewID(),
-	// 		},
-	// 		Name: "默认",
-	// 	})
-	// }
 }
 
 func GetDB() *gorm.DB {

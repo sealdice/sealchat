@@ -74,15 +74,17 @@ const speech = useSpeechRecognition({
 
 const { isListening, isSupported, stop, result } = speech
 
-if (speech.isSupported.value) {
+if (isSupported.value) {
   // @ts-expect-error missing types
   const SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList
-  const speechRecognitionList = new SpeechGrammarList()
-  // speechRecognitionList.addFromString(grammar, 1)
-  speech.recognition!.grammars = speechRecognitionList
+  if (SpeechGrammarList) {
+    const speechRecognitionList = new SpeechGrammarList()
+    // speechRecognitionList.addFromString(grammar, 1)
+    speech.recognition!.grammars = speechRecognitionList
 
-  watch(speech.result, () => {
-  })
+    watch(speech.result, () => {
+    })
+  }
 }
 
 const startA = () => {
@@ -197,7 +199,7 @@ const suffix = (item: SChannel) => {
                       { label: '退出', key: 'leave', item: i, show: i.permType === 'non-public' },
                       { label: '解散', key: 'dissolve', item: i, }
                     ]" @select="handleSelect">
-                      <n-button text @click.stop quaternary circle size="tiny">
+                      <n-button @click.stop quaternary circle size="tiny">
                         <template #icon>
                           <n-icon>
                             <Menu />
@@ -243,7 +245,7 @@ const suffix = (item: SChannel) => {
                           { label: '退出', key: 'leave', item: i, show: i.permType === 'non-public' },
                           { label: '解散', key: 'dissolve', item: i, }
                         ]" @select="handleSelect">
-                          <n-button text @click.stop quaternary circle size="tiny">
+                          <n-button @click.stop quaternary circle size="tiny">
                             <template #icon>
                               <n-icon>
                                 <Menu />

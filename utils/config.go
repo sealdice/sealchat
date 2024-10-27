@@ -2,10 +2,10 @@ package utils
 
 import (
 	"fmt"
-	"github.com/knadh/koanf/providers/file"
 	"os"
 
 	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/providers/structs"
 	"github.com/knadh/koanf/v2"
 	"github.com/samber/lo"
@@ -19,7 +19,7 @@ type AppConfig struct {
 	ChatHistoryPersistentDays int64  `json:"chatHistoryPersistentDays" yaml:"chatHistoryPersistentDays"`
 	ImageSizeLimit            int64  `json:"imageSizeLimit" yaml:"imageSizeLimit"` // in kb
 	ImageCompress             bool   `json:"imageCompress" yaml:"imageCompress"`
-	DSN                       string `json:"-" yaml:"dbUrl"`
+	DSN                       string `json:"-" yaml:"dbUrl" koanf:"dbUrl"`
 }
 
 // 注: 实验型使用koanf，其实从需求上讲目前并无必要
@@ -39,8 +39,22 @@ func ReadConfig() *AppConfig {
 
 	lo.Must0(k.Load(structs.Provider(&config, "yaml"), nil))
 
+	f := file.Provider("config.yaml")
+	// _ = f.Watch(func(event interface{}, err error) {
+	// 	if err != nil {
+	// 		log.Printf("watch error: %v", err)
+	// 		return
+	// 	}
+	//
+	// 	log.Println("config changed. Reloading ...")
+	// 	k = koanf.New(".")
+	// 	lo.Must0(k.Load(structs.Provider(&config, "yaml"), nil))
+	// 	lo.Must0(k.Load(f, yaml.Parser()))
+	// 	k.Print()
+	// })
+
 	isNotExist := false
-	if err := k.Load(file.Provider("config.yaml"), yaml.Parser()); err != nil {
+	if err := k.Load(f, yaml.Parser()); err != nil {
 		fmt.Printf("配置读取失败: %v\n", err)
 
 		if os.IsNotExist(err) {

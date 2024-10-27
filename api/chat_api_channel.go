@@ -56,7 +56,7 @@ func apiChannelPrivateCreate(ctx *ChatContext, data *struct {
 		}{Code: http.StatusBadRequest, Msg: "指定的用户不存在或数据库异常"}, nil
 	}
 
-	if f := model.FriendRelationGet(ctx.User.ID, data.UserId); f != nil {
+	if f := model.FriendRelationGet(ctx.User.ID, data.UserId); f.ID != "" {
 		model.FriendRelationSetVisible(ctx.User.ID, data.UserId)
 	} else {
 		_ = model.FriendRelationCreate(ctx.User.ID, data.UserId, false) // 创建一个用户关系:陌生人

@@ -95,6 +95,15 @@ func ChannelGet(id string) (*ChannelModel, error) {
 	return &item, err
 }
 
+func ChannelPrivateGet(userID1, userID2 string) (ch *ChannelModel, err error) {
+	if userID1 > userID2 {
+		userID1, userID2 = userID2, userID1
+	}
+
+	chId := fmt.Sprintf("%s:%s", userID1, userID2)
+	return ChannelGet(chId)
+}
+
 func ChannelPrivateList(userId string) []*ChannelModel {
 	// 加载有权限访问的频道
 	var items []*ChannelModel

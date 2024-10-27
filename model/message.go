@@ -19,9 +19,9 @@ type MessageModel struct {
 
 	SenderMemberName string `json:"sender_member_name"` // 用户在当时的名字
 
-	User   *UserModel    `json:"user"`   // 嵌套 User 结构体
-	Member *MemberModel  `json:"member"` // 嵌套 Member 结构体
-	Quote  *MessageModel `json:"quote"`  // 嵌套 Message 结构体
+	User   *UserModel    `json:"user"`           // 嵌套 User 结构体
+	Member *MemberModel  `json:"member"`         // 嵌套 Member 结构体
+	Quote  *MessageModel `json:"quote" gorm:"-"` // 嵌套 Message 结构体
 }
 
 func (*MessageModel) TableName() string {
