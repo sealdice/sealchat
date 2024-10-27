@@ -148,66 +148,8 @@ func apiMessageCreate(ctx *ChatContext, data *struct {
 		ctx.BroadcastEventInChannelForBot(data.ChannelID, ev)
 		// ctx.BroadcastEvent(ev)
 
-		if len(content) >= 2 && (content[0] == '/' || content[0] == '.') && content[1] == 'x' {
-			vm := ds.NewVM()
-			var botText string
-			expr := strings.TrimSpace(content[2:])
-
-			if expr == "" {
-				expr = "d100"
-			}
-
-			err := vm.Run(expr)
-			vm.Config.EnableDiceWoD = true
-			vm.Config.EnableDiceCoC = true
-			vm.Config.EnableDiceFate = true
-			vm.Config.EnableDiceDoubleCross = true
-			vm.Config.DefaultDiceSideExpr = "面数 ?? 100"
-			vm.Config.OpCountLimit = 30000
-
-			if err != nil {
-				botText = "出错:" + err.Error()
-			} else {
-				sb := strings.Builder{}
-				sb.WriteString(fmt.Sprintf("算式: %s\n", expr))
-				sb.WriteString(fmt.Sprintf("过程: %s\n", vm.GetDetailText()))
-				sb.WriteString(fmt.Sprintf("结果: %s\n", vm.Ret.ToString()))
-				sb.WriteString(fmt.Sprintf("栈顶: %d 层数:%d 算力: %d\n", vm.StackTop(), vm.Depth(), vm.NumOpCount))
-				sb.WriteString(fmt.Sprintf("注: 这是一只小海豹，只有基本骰点功能，完整功能请接入海豹核心"))
-				botText = sb.String()
-			}
-
-			m := model.MessageModel{
-				StringPKBaseModel: model.StringPKBaseModel{
-					ID: utils.NewID(),
-				},
-				UserID:    "BOT:1000",
-				ChannelID: data.ChannelID,
-				MemberID:  "BOT:1000",
-				Content:   botText,
-			}
-			db.Create(&m)
-
-			userData := &protocol.User{
-				ID:     "BOT:1000",
-				Nick:   "小海豹",
-				Avatar: "",
-				IsBot:  true,
-			}
-			messageData := m.ToProtocolType2(channelData)
-			messageData.User = userData
-			messageData.Member = &protocol.GuildMember{
-				Name: userData.Nick,
-				Nick: userData.Nick,
-			}
-
-			ctx.BroadcastEvent(&protocol.Event{
-				// 协议规定: 事件中必须含有 channel，message，user
-				Type:    protocol.EventMessageCreated,
-				Message: messageData,
-				Channel: channelData,
-				User:    userData,
-			})
+		if appConfig.BuiltInSealBotEnable {
+			builtinSealBotSolve(ctx, data, channelData)
 		}
 
 		return messageData, nil
@@ -311,4 +253,73 @@ func apiMessageList(ctx *ChatContext, data *struct {
 		Data: items,
 		Next: next,
 	}, nil
+}
+
+func builtinSealBotSolve(ctx *ChatContext, data *struct {
+	ChannelID string `json:"channel_id"`
+	QuoteID   string `json:"quote_id"`
+	Content   string `json:"content"`
+}, channelData *protocol.Channel) {
+	content := data.Content
+	if len(content) >= 2 && (content[0] == '/' || content[0] == '.') && content[1] == 'x' {
+		vm := ds.NewVM()
+		var botText string
+		expr := strings.TrimSpace(content[2:])
+
+		if expr == "" {
+			expr = "d100"
+		}
+
+		err := vm.Run(expr)
+		vm.Config.EnableDiceWoD = true
+		vm.Config.EnableDiceCoC = true
+		vm.Config.EnableDiceFate = true
+		vm.Config.EnableDiceDoubleCross = true
+		vm.Config.DefaultDiceSideExpr = "面数 ?? 100"
+		vm.Config.OpCountLimit = 30000
+
+		if err != nil {
+			botText = "出错:" + err.Error()
+		} else {
+			sb := strings.Builder{}
+			sb.WriteString(fmt.Sprintf("算式: %s\n", expr))
+			sb.WriteString(fmt.Sprintf("过程: %s\n", vm.GetDetailText()))
+			sb.WriteString(fmt.Sprintf("结果: %s\n", vm.Ret.ToString()))
+			sb.WriteString(fmt.Sprintf("栈顶: %d 层数:%d 算力: %d\n", vm.StackTop(), vm.Depth(), vm.NumOpCount))
+			sb.WriteString(fmt.Sprintf("注: 这是一只小海豹，只有基本骰点功能，完整功能请接入海豹核心"))
+			botText = sb.String()
+		}
+
+		m := model.MessageModel{
+			StringPKBaseModel: model.StringPKBaseModel{
+				ID: utils.NewID(),
+			},
+			UserID:    "BOT:1000",
+			ChannelID: data.ChannelID,
+			MemberID:  "BOT:1000",
+			Content:   botText,
+		}
+		model.GetDB().Create(&m)
+
+		userData := &protocol.User{
+			ID:     "BOT:1000",
+			Nick:   "小海豹",
+			Avatar: "",
+			IsBot:  true,
+		}
+		messageData := m.ToProtocolType2(channelData)
+		messageData.User = userData
+		messageData.Member = &protocol.GuildMember{
+			Name: userData.Nick,
+			Nick: userData.Nick,
+		}
+
+		ctx.BroadcastEvent(&protocol.Event{
+			// 协议规定: 事件中必须含有 channel，message，user
+			Type:    protocol.EventMessageCreated,
+			Message: messageData,
+			Channel: channelData,
+			User:    userData,
+		})
+	}
 }

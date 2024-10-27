@@ -15,10 +15,11 @@ const model = ref<ServerConfig>({
   domain: '127.0.0.1:3212',
   registerOpen: true,
   // VisitorOpen: true,
-  webUrl: '/test',
+  webUrl: '/',
   chatHistoryPersistentDays: 0,
   imageSizeLimit: 2 * 1024,
   imageCompress: true,
+  builtInSealBotEnable: true,
 })
 
 const utils = useUtilsStore();
@@ -109,6 +110,9 @@ const feedbackWeburlShow = ref(false)
       </n-form-item>
       <n-form-item label="图片上传前压缩">
         <n-switch v-model:value="model.imageCompress" />
+      </n-form-item>
+      <n-form-item label="启用内置小海豹">
+        <n-switch v-model:value="model.builtInSealBotEnable" />
       </n-form-item>
     </n-form>
   </div>

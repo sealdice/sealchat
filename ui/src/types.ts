@@ -24,6 +24,7 @@ export interface ServerConfig {
   chatHistoryPersistentDays: number;
   imageSizeLimit: number;
   imageCompress: boolean;
+  builtInSealBotEnable: boolean;
 }
 
 export interface UserInfo {

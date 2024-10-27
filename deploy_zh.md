@@ -169,6 +169,21 @@ dbUrl: ./data/chat.db
 
 注意：请确保MySQL服务器已启动，并且配置的用户有足够的权限访问和操作sealchat数据库。
 
+## 一份配置文件示例
+
+```yaml
+chatHistoryPersistentDays: 599
+dbUrl: postgresql://seal:123@localhost:5432/sealchat
+domain: 127.0.0.1:3212
+imageCompress: true
+imageSizeLimit: 99999999
+registerOpen: true
+serveAt: :3212
+#
+webUrl: /
+# 启用小海豹
+builtInSealBotEnable: true
+```
 
 ## 其他说明
 

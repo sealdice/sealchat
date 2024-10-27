@@ -20,6 +20,7 @@ type AppConfig struct {
 	ImageSizeLimit            int64  `json:"imageSizeLimit" yaml:"imageSizeLimit"` // in kb
 	ImageCompress             bool   `json:"imageCompress" yaml:"imageCompress"`
 	DSN                       string `json:"-" yaml:"dbUrl" koanf:"dbUrl"`
+	BuiltInSealBotEnable      bool   `json:"builtInSealBotEnable" yaml:"builtInSealBotEnable"` // 内置小海豹启用
 }
 
 // 注: 实验型使用koanf，其实从需求上讲目前并无必要
@@ -35,6 +36,7 @@ func ReadConfig() *AppConfig {
 		ImageSizeLimit:            8192,
 		ImageCompress:             true,
 		DSN:                       "./data/chat.db",
+		BuiltInSealBotEnable:      true,
 	}
 
 	lo.Must0(k.Load(structs.Provider(&config, "yaml"), nil))
@@ -79,10 +81,22 @@ func ReadConfig() *AppConfig {
 
 func WriteConfig(config *AppConfig) {
 	if config != nil {
-		err := k.Load(structs.Provider(&config, "yaml"), nil)
-		if err != nil {
-			fmt.Println("错误: 配置文件序列化失败")
-			return
+		if config.ServeAt != "" {
+			_ = k.Set("serveAt", config.ServeAt)
+		}
+		if config.Domain != "" {
+			_ = k.Set("domain", config.Domain)
+		}
+		_ = k.Set("registerOpen", config.RegisterOpen)
+		_ = k.Set("webUrl", config.WebUrl)
+		_ = k.Set("chatHistoryPersistentDays", config.ChatHistoryPersistentDays)
+		_ = k.Set("imageSizeLimit", config.ImageSizeLimit)
+		_ = k.Set("imageCompress", config.ImageCompress)
+		_ = k.Set("builtInSealBotEnable", config.BuiltInSealBotEnable)
+
+		if err := k.Unmarshal("", &config); err != nil {
+			fmt.Printf("配置解析失败: %v\n", err)
+			os.Exit(-1)
 		}
 	}
 

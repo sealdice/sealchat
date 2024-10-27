@@ -169,6 +169,7 @@ const onAdd = () => {
       </n-tab-pane>
 
       <n-tab-pane name="basic" tab="基础设置">
+        <div>尚未制作完成</div>
         <n-form label-placement="top" label-width="auto" class="pt-4">
           <n-form-item label="频道名称">
             <n-input v-model:value="model.name" />
@@ -195,9 +196,9 @@ const onAdd = () => {
 
       <n-tab-pane name="members2" tab="权限配置">
         <div class="mb-4 flex space-x-2">
+          <div>尚未制作完成</div>
         </div>
       </n-tab-pane>
-
     </n-tabs>
 
   </n-modal>
