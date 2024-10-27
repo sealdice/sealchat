@@ -11,6 +11,12 @@ Just one exe, easy to deply.
 * Bot supported.
 * Multi-platform support, including Windows, Linux, Mac OS.
 
+## Deploy
+
+Please refer to the following link for detailed deployment instructions:
+
+[SealChat 部署文档](./deploy_zh.md)
+
 
 ## Extension to Satori protocol
 
