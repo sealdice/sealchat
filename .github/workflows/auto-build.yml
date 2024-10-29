@@ -19,28 +19,12 @@ jobs:
         with:
           submodules: true
 
-      - name: Get UI hash
-        id: ui-hash
-        run: |
-          echo "UI_HASH=$(find ui -type f | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-
-      - name: Cache UI build
-        uses: actions/cache@v3
-        id: cache
-        with:
-          path: ./ui/dist
-          key: ${{ runner.os }}-ui-${{ steps.ui-hash.outputs.UI_HASH }}
-          restore-keys: |
-            ${{ runner.os }}-ui-
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
-        if: steps.cache.outputs.cache-hit != 'true'
         with:
           node-version: latest
 
       - name: Build UI
-        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           cd ui
           yarn install
@@ -137,7 +121,7 @@ jobs:
         id: slug
         run: |
           echo "::set-output name=SHORT_SHA::$(echo ${{ github.sha }} | cut -c1-7)"
-          echo "::set-output name=DATE::$(date +%Y-%m-%d)"
+          echo "::set-output name=DATE::$(date +%Y%m%d)"
 
       - name: Upload Release
         uses: softprops/action-gh-release@v1
