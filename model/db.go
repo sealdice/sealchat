@@ -13,6 +13,8 @@ import (
 	"sealchat/utils"
 )
 
+// 注: 所有时间戳使用 time.Now().UnixMilli()
+
 var db *gorm.DB
 
 type StringPKBaseModel struct {
@@ -88,6 +90,7 @@ func DBInit(dsn string) {
 	db.AutoMigrate(&TimelineUserLastRecordModel{})
 	db.AutoMigrate(&UserEmojiModel{})
 	db.AutoMigrate(&BotTokenModel{})
+	db.AutoMigrate(&ChannelLatestReadModel{})
 
 	db.AutoMigrate(&SystemRoleModel{}, &ChannelRoleModel{}, &RolePermissionModel{}, &UserRoleMappingModel{})
 	db.AutoMigrate(&FriendModel{}, &FriendRequestModel{})

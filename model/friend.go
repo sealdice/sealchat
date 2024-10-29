@@ -123,7 +123,6 @@ func FriendRelationSetVisibleById(id string) {
 		"visible1": true,
 		"visible2": true,
 	}
-	fmt.Println("!!!", id)
 	db.Model(&FriendModel{}).Where("id = ?", id).Updates(updates)
 }
 

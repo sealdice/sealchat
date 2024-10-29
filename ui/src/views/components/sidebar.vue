@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import router from '@/router';
-import { useChatStore } from '@/stores/chat';
+import { chatEvent, useChatStore } from '@/stores/chat';
 import { useUserStore } from '@/stores/user';
 import { Plus } from '@vicons/tabler';
 import { Menu, SettingsSharp } from '@vicons/ionicons5';
@@ -162,12 +162,22 @@ const suffix = (item: SChannel) => {
   return ''
 }
 
+const aaa = ref(false);
 </script>
 
 <template>
   <div class="w-full h-full sc-sidebar sc-sidebar-fill">
     <n-tabs type="segment" v-model:value="chat.sidebarTab" tab-class="sc-sidebar-fill" pane-class="sc-sidebar-fill">
       <n-tab-pane name="channels" tab="频道">
+        <template #tab>
+          <span>频道</span>
+          <div class="ml-1" v-if="chat.unreadCountPublic">
+            <div class="label-unread">
+              {{ chat.unreadCountPublic }}
+            </div>
+          </div>
+        </template>
+
         <!-- 频道列表内容将在这里显示 -->
         <div class="space-y-1 flex flex-col px-2">
           <template v-if="chat.curChannel?.name">
@@ -188,6 +198,12 @@ const suffix = (item: SChannel) => {
                     <n-icon :component="IconNumber"></n-icon>
                     <span>{{ `${i.name}${suffix(i)} (${(i as any).membersCount})` }}</span>
                   </template>
+                </div>
+
+                <div class="right-num">
+                  <div class="label-unread">
+                    {{ chat.unreadCountMap[i.id] > 99 ? '99+' : chat.unreadCountMap[i.id] }}
+                  </div>
                 </div>
 
                 <div class="right">
@@ -236,8 +252,14 @@ const suffix = (item: SChannel) => {
                         <span>{{ `${child.name}${suffix(child)} (${(child as any).membersCount})` }}</span>
                       </template>
                     </div>
-                    <div class="right">
 
+                    <div class="right-num">
+                      <div class="label-unread">
+                        {{ chat.unreadCountMap[child.id] > 99 ? '99+' : chat.unreadCountMap[child.id] }}
+                      </div>
+                    </div>
+
+                    <div class="right">
                       <div class="flex justify-center space-x-1">
                         <n-dropdown trigger="click" :options="[
                           { label: '进入', key: 'enter', item: child },
@@ -264,7 +286,6 @@ const suffix = (item: SChannel) => {
                     </div>
                   </div>
 
-
                   <!-- 当前频道的用户列表 -->
                   <div class="pl-8 mt-2 space-y-2" v-if="child.id == chat.curChannel.id && chat.curChannelUsers.length">
                     <UserLabel :name="j.nick" :src="j.avatar" v-for="j in chat.curChannelUsers" />
@@ -288,6 +309,14 @@ const suffix = (item: SChannel) => {
         </div>
       </n-tab-pane>
       <n-tab-pane name="privateChats" tab="私聊">
+        <template #tab>
+          <span>私聊</span>
+          <div class="ml-1" v-if="chat.unreadCountPrivate">
+            <div class="label-unread">
+              {{ chat.unreadCountPrivate }}
+            </div>
+          </div>
+        </template>
         <!-- 私聊列表内容将在这里显示 -->
         <SidebarPrivate />
       </n-tab-pane>
@@ -337,11 +366,19 @@ const suffix = (item: SChannel) => {
     >.right {
       @apply block;
     }
+
+    >.right-num {
+      @apply hidden;
+    }
   }
 
   &.active {
     @apply bg-blue-200;
 
+  }
+
+  >.right-num {
+    @apply block flex items-center;
   }
 
   >.right {

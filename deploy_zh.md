@@ -172,17 +172,24 @@ dbUrl: ./data/chat.db
 ## 一份配置文件示例
 
 ```yaml
-chatHistoryPersistentDays: 599
-dbUrl: postgresql://seal:123@localhost:5432/sealchat
+# 主页
 domain: 127.0.0.1:3212
+# 是否压缩图片
 imageCompress: true
+# 图片上传大小限制
 imageSizeLimit: 99999999
+# 注册是否开放
 registerOpen: true
+# 提供服务端口
 serveAt: :3212
-#
+# 前端子路径
 webUrl: /
 # 启用小海豹
 builtInSealBotEnable: true
+# 历史保留时限，用户能看到多少天前的聊天记录，默认为-1(永久)，未实装
+chatHistoryPersistentDays: -1
+# 数据库地址，默认为 ./data/chat.db
+dbUrl: postgresql://seal:123@localhost:5432/sealchat
 ```
 
 ## 其他说明

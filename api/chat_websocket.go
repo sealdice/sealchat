@@ -262,6 +262,9 @@ func websocketWorks(app *fiber.App) {
 						apiWrap(ctx, msg, apiMessageList)
 						solved = true
 
+					case "unread.count":
+						apiWrap(ctx, msg, apiUnreadCount)
+
 					case "guild.member.list":
 						apiWrap(ctx, msg, apiGuildMemberList)
 						solved = true

@@ -32,7 +32,7 @@ func ReadConfig() *AppConfig {
 		Domain:                    "127.0.0.1:3212",
 		RegisterOpen:              true,
 		WebUrl:                    "/",
-		ChatHistoryPersistentDays: 60,
+		ChatHistoryPersistentDays: -1,
 		ImageSizeLimit:            8192,
 		ImageCompress:             true,
 		DSN:                       "./data/chat.db",

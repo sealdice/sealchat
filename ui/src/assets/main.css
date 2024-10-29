@@ -29,3 +29,7 @@ html, body {
 }
 
 /* .sc-header {} */
+
+.label-unread {
+  @apply rounded-full bg-red-500 text-white text-xs px-1 py-0;
+}

@@ -133,10 +133,16 @@ jobs:
             cd output && zip -r ../release/sealchat_$(date +%Y%m%d)_${SHORT_SHA}_${{ matrix.name }}.zip sealchat-server.exe
           fi
 
+      - name: Set slug output
+        id: slug
+        run: |
+          echo "::set-output name=SHORT_SHA::$(echo ${{ github.sha }} | cut -c1-7)"
+          echo "::set-output name=DATE::$(date +%Y-%m-%d)"
+
       - name: Upload Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: dev-release
+          tag_name: ${{ steps.slug.outputs.DATE }}-${{ steps.slug.outputs.SHORT_SHA }}
           files: |
             release/sealchat_*_*_${{ matrix.name }}.*
         env:

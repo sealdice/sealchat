@@ -26,6 +26,9 @@ interface ChatState {
   sidebarTab: 'channels' | 'privateChats',
   atOptionsOn: boolean,
 
+  // 频道未读: id - 数量
+  unreadCountMap: { [key: string]: number },
+
   messageMenu: {
     show: boolean
     optionsComponent: MenuOptions
@@ -43,7 +46,7 @@ interface ChatState {
 const apiMap = new Map<string, any>();
 let _connectResolve: any = null;
 
-type myEventName = EventName | 'message-created' | 'channel-switch-to' | 'connected' | 'channel-member-updated';
+type myEventName = EventName | 'message-created' | 'channel-switch-to' | 'connected' | 'channel-member-updated' | 'message-created-notice';
 export const chatEvent = new Emitter<{
   [key in myEventName]: (msg?: Event) => void;
   // 'message-created': (msg: Event) => void;
@@ -66,6 +69,7 @@ export const useChatStore = defineStore({
     curChannelUsers: [],
 
     sidebarTab: 'channels',
+    unreadCountMap: {},
 
     // 太遮挡视线，先关闭了
     atOptionsOn: false,
@@ -100,7 +104,17 @@ export const useChatStore = defineStore({
   getters: {
     _lastChannel: (state) => {
       return localStorage.getItem('lastChannel') || '';
-    }
+    },
+    unreadCountPrivate: (state) => {
+      return Object.entries(state.unreadCountMap).reduce((sum, [key, count]) => {
+        return key.includes(':') ? sum + count : sum;
+      }, 0);
+    },
+    unreadCountPublic: (state) => {
+      return Object.entries(state.unreadCountMap).reduce((sum, [key, count]) => {
+        return key.includes(':') ? sum : sum + count;
+      }, 0);
+    },
   },
 
   actions: {
@@ -313,6 +327,10 @@ export const useChatStore = defineStore({
         }
       }
 
+      const countMap = await this.channelUnreadCount();
+      this.unreadCountMap = countMap;
+      console.log('countMap', countMap);
+
       return tree;
     },
 
@@ -420,6 +438,12 @@ export const useChatStore = defineStore({
       return resp?.data;
     },
 
+    // 获取未读信息
+    async channelUnreadCount() {
+      const resp = await this.sendAPI<{ data: { [key: string]: number } }>('unread.count', {});
+      return resp?.data;
+    },
+
     async friendRequestCreate(senderId: string, receiverId: string, note: string = '') {
       const resp = await this.sendAPI<{ data: { status: number } }>('friend.request.create', {
         senderId,
@@ -466,5 +490,14 @@ export const useChatStore = defineStore({
     async eventDispatch(e: Event) {
       chatEvent.emit(e.type as any, e);
     }
+  }
+});
+
+chatEvent.on('message-created-notice', (data: any) => {
+  const chId = data.channelId;
+  const chat = useChatStore();
+  console.log('xx', chId, chat.channelTree, chat.channelTreePrivate);
+  if (chat.channelTree.find(c => c.id === chId) || chat.channelTreePrivate.find(c => c.id === chId)) {
+    chat.unreadCountMap[chId] = (chat.unreadCountMap[chId] || 0) + 1;
   }
 });

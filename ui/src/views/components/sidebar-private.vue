@@ -59,6 +59,18 @@ const strangersList = computed(() => {
   return userRelationList.value?.filter(item => item.friendInfo?.isFriend === false) || [];
 });
 
+const unreadCountPrivateFriend = computed(() => {
+  return friendsList.value.reduce((sum, friend) => {
+    return sum + (chat.unreadCountMap[friend.id] || 0);
+  }, 0);
+});
+
+const unreadCountPrivateStranger = computed(() => {
+  return strangersList.value.reduce((sum, stranger) => {
+    return sum + (chat.unreadCountMap[stranger.id] || 0);
+  }, 0);
+});
+
 
 const addFriend = async (userId: string) => {
   try {
@@ -139,21 +151,46 @@ const handleReject = async () => {
     </n-collapse-item>
 
     <n-collapse-item :title="`好友 (${friendsList.length})`" name="friends">
+      <template #header>
+        <div class="flex items-center w-full">
+          <span>好友 ({{ friendsList.length }})</span>
+          <div class="label-unread ml-3" v-if="unreadCountPrivateFriend">
+            {{ unreadCountPrivateFriend }}
+          </div>
+        </div>
+      </template>
+
       <!-- 这里添加好友列表 -->
       <div @click="doChannelSwitch(item)" v-for="item in friendsList" :key="item.id" class="sider-item"
-      :class="item.id === chat.curChannel?.id ? ['active'] : []">
+        :class="item.id === chat.curChannel?.id ? ['active'] : []">
         <UserLabel :name="item.friendInfo?.userInfo?.nick" :src="item.friendInfo?.userInfo?.avatar" />
-        <div>
-          <n-button size="tiny" type="info" secondary @click.stop="friendDelete(item.friendInfo?.userInfo?.id)">解除</n-button>
+        <div class="flex space-x-1 items-center">
+          <div class="">
+            <div class="label-unread">
+              {{ chat.unreadCountMap[item.id] > 99 ? '99+' : chat.unreadCountMap[item.id] }}
+            </div>
+          </div>
+
+          <n-button size="tiny" type="info" secondary
+            @click.stop="friendDelete(item.friendInfo?.userInfo?.id)">解除</n-button>
         </div>
       </div>
     </n-collapse-item>
     <n-collapse-item :title="`陌生人 (${strangersList.length})`" name="strangers">
+      <template #header>
+        <div class="flex items-center w-full">
+          <span>陌生人 ({{ strangersList.length }})</span>
+          <div class="label-unread ml-3" v-if="unreadCountPrivateStranger">
+            {{ unreadCountPrivateStranger }}
+          </div>
+        </div>
+      </template>
+
       <!-- 这里添加陌生人列表 -->
       <div @click="doChannelSwitch(item)" v-for="item in strangersList" :key="item.id" class="sider-item"
         :class="item.id === chat.curChannel?.id ? ['active'] : []">
         <UserLabel :name="item.friendInfo?.userInfo?.nick" :src="item.friendInfo?.userInfo?.avatar" />
-        <div>
+        <div class="flex space-x-1 items-center">
           <n-tooltip trigger="hover" v-if="!isFriendRequesting(item.friendInfo?.userInfo?.id ?? '')">
             <template #trigger>
               <n-button size="tiny" type="primary" @click.stop="addFriend(item.friendInfo?.userInfo?.id ?? '')">
@@ -169,6 +206,12 @@ const handleReject = async () => {
               </template>
               已发送好友请求，等待对方验证
             </n-tooltip>
+          </div>
+
+          <div class="">
+            <div class="label-unread">
+              {{ chat.unreadCountMap[item.id] > 99 ? '99+' : chat.unreadCountMap[item.id] }}
+            </div>
           </div>
         </div>
       </div>

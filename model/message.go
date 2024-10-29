@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"time"
 
 	"sealchat/protocol"
@@ -37,4 +38,42 @@ func (m *MessageModel) ToProtocolType2(channelData *protocol.Channel) *protocol.
 		// Member:    member.ToProtocolType(),
 		CreatedAt: time.Now().UnixMilli(), // 跟js相匹配
 	}
+}
+
+func MessagesCountByChannelIDsAfterTime(channelIDs []string, updateTimes []time.Time, userID string) (map[string]int64, error) {
+	// updateTimes []int64
+	if len(channelIDs) != len(updateTimes) {
+		return nil, errors.New("channelIDs和updateTimes长度不匹配")
+	}
+
+	var results []struct {
+		ChannelID string
+		Count     int64
+	}
+
+	query := db.Model(&MessageModel{}).
+		Select("channel_id, count(*) as count").
+		Where("user_id <> ?", userID)
+
+	// 使用gorm的条件构建器
+	conditions := db.Where("1 = 0") // 初始为false的条件
+	for i, channelID := range channelIDs {
+		conditions = conditions.Or(db.Where("channel_id = ? AND created_at > ?", channelID, updateTimes[i]))
+	}
+
+	err := query.Where(conditions).
+		Group("channel_id").
+		Find(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// 转换为map
+	countMap := make(map[string]int64)
+	for _, result := range results {
+		countMap[result.ChannelID] = result.Count
+	}
+
+	return countMap, nil
 }

@@ -64,6 +64,8 @@ func apiMessageCreate(ctx *ChatContext, data *struct {
 	db := model.GetDB()
 	channelId := data.ChannelID
 
+	var privateOtherUser string
+
 	// 权限检查
 	if len(channelId) < 30 { // 注意，这不是一个好的区分方式
 		// 群内
@@ -75,6 +77,11 @@ func apiMessageCreate(ctx *ChatContext, data *struct {
 		fr, _ := model.FriendRelationGetByID(channelId)
 		if fr.ID == "" {
 			return nil, nil
+		}
+
+		privateOtherUser = fr.UserID1
+		if fr.UserID1 == ctx.User.ID {
+			privateOtherUser = fr.UserID2
 		}
 	}
 
@@ -95,6 +102,28 @@ func apiMessageCreate(ctx *ChatContext, data *struct {
 		// ids := channel.GetPrivateUserIDs()
 		// model.FriendRelationSetVisible(ids[0], ids[1])
 		model.FriendRelationSetVisibleById(channel.ID)
+		_ = model.ChannelReadInit(data.ChannelID, privateOtherUser)
+
+		// 发送快速更新通知
+		ctx.BroadcastToUserJSON(privateOtherUser, map[string]any{
+			"op":        0,
+			"type":      "message-created-notice",
+			"channelId": data.ChannelID,
+		})
+	} else {
+		// 给当前在线人都通知一遍
+		var uids []string
+		ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*WsSyncConn, *ConnInfo]) bool {
+			uids = append(uids, key)
+			return true
+		})
+		_ = model.ChannelReadInitInBatches(data.ChannelID, uids)
+		// 发送快速更新通知
+		ctx.BroadcastJSON(map[string]any{
+			"op":        0,
+			"type":      "message-created-notice",
+			"channelId": data.ChannelID,
+		})
 	}
 
 	var quote model.MessageModel
@@ -227,6 +256,8 @@ func apiMessageList(ctx *ChatContext, data *struct {
 		i.Quote = x[0]
 	}, "id, content, created_at, user_id, is_revoked")
 
+	_ = model.ChannelReadSet(data.ChannelID, ctx.User.ID)
+
 	q.Count(&count)
 	var next string
 
@@ -322,4 +353,12 @@ func builtinSealBotSolve(ctx *ChatContext, data *struct {
 			User:    userData,
 		})
 	}
+}
+
+func apiUnreadCount(ctx *ChatContext, data *struct{}) (any, error) {
+	lst, err := model.ChannelUnreadFetch(ctx.User.ID)
+	if err != nil {
+		return nil, err
+	}
+	return lst, err
 }

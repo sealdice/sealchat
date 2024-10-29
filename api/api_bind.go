@@ -26,7 +26,7 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	corsConfig := cors.New(cors.Config{
 		AllowOrigins:     "*",
 		AllowMethods:     "GET, POST, PUT, DELETE",
-		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, ChannelId",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, ObjectId",
 		ExposeHeaders:    "Content-Length",
 		AllowCredentials: false,
 		MaxAge:           3600,

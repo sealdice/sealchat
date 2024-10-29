@@ -20,6 +20,24 @@ type ChatContext struct {
 	UserId2ConnInfo *utils.SyncMap[string, *utils.SyncMap[*WsSyncConn, *ConnInfo]]
 }
 
+func (ctx *ChatContext) BroadcastToUserJSON(userId string, data any) {
+	value, _ := ctx.UserId2ConnInfo.Load(userId)
+	value.Range(func(key *WsSyncConn, value *ConnInfo) bool {
+		_ = value.Conn.WriteJSON(data)
+		return true
+	})
+}
+
+func (ctx *ChatContext) BroadcastJSON(data any) {
+	ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*WsSyncConn, *ConnInfo]) bool {
+		value.Range(func(key *WsSyncConn, value *ConnInfo) bool {
+			_ = value.Conn.WriteJSON(data)
+			return true
+		})
+		return true
+	})
+}
+
 func (ctx *ChatContext) BroadcastEvent(data *protocol.Event) {
 	data.Timestamp = time.Now().Unix()
 	ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*WsSyncConn, *ConnInfo]) bool {
