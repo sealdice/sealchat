@@ -2,8 +2,9 @@ package service
 
 import (
 	"fmt"
-	"github.com/mikespook/gorbac"
 	"strings"
+
+	"github.com/mikespook/gorbac"
 
 	"github.com/samber/lo"
 
@@ -58,7 +59,8 @@ func ChannelList(userId string) ([]*model.ChannelModel, error) {
 	var items []*model.ChannelModel
 	db.Model(&model.ChannelModel{}).Where("id in ? or perm_type = ?", idsAll, "public").
 		Group("id").              // 使用Group来去重
-		Order("created_at DESC"). // 按创建时间降序排列
+		Order("sort_order DESC"). // 先按优先级排序(数字大的在前)
+		Order("created_at DESC"). // 同优先级按创建时间降序
 		Find(&items)
 
 	return items, nil
@@ -85,6 +87,10 @@ func ChannelNew(channelID, channelType, channelName string, creatorId string, pa
 			pm.PermFuncChannelRoleUnlink,
 			pm.PermFuncChannelRoleLinkRoot,
 			pm.PermFuncChannelRoleUnlinkRoot,
+			pm.PermFuncChannelManageInfo,
+			pm.PermFuncChannelManageRole,
+			pm.PermFuncChannelManageRoleRoot,
+			pm.PermFuncChannelManageMute,
 			pm.PermFuncChannelReadAll,
 			pm.PermFuncChannelTextSendAll,
 		}
@@ -102,6 +108,9 @@ func ChannelNew(channelID, channelType, channelName string, creatorId string, pa
 			pm.PermFuncChannelRoleLink,
 			pm.PermFuncChannelRoleUnlink,
 			pm.PermFuncChannelReadAll,
+			pm.PermFuncChannelManageInfo,
+			pm.PermFuncChannelManageRole,
+			pm.PermFuncChannelManageMute,
 			pm.PermFuncChannelTextSendAll,
 		}
 	})

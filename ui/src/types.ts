@@ -67,8 +67,10 @@ export interface SChannel extends Channel {
   membersCount?: number; // 频道成员数量
 
   children?: SChannel[];
+  sortOrder?: number;
   typingIndicatorSetting?: boolean;
   desc?: string;
+  note?: string;
 }
 
 export type APIMessageCreateResp = Message

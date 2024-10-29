@@ -143,7 +143,7 @@ const handleReject = async () => {
     <n-collapse-item :title="`好友申请 (${userRequestList?.length ?? 0})`" name="invite">
       <!-- 这里添加陌生人列表 -->
       <div v-for="item in userRequestList" :key="item.id" class="sider-item">
-        <UserLabel :name="item.userInfoSender?.nick" :src="item.userInfoSender?.avatar" />
+        <UserLabel style="max-width: 11rem" :name="item.userInfoSender?.nick" :src="item.userInfoSender?.avatar" />
         <div>
           <n-button size="tiny" type="info" secondary @click="modelShow(true, item, item.note)">查看</n-button>
         </div>
@@ -163,7 +163,7 @@ const handleReject = async () => {
       <!-- 这里添加好友列表 -->
       <div @click="doChannelSwitch(item)" v-for="item in friendsList" :key="item.id" class="sider-item"
         :class="item.id === chat.curChannel?.id ? ['active'] : []">
-        <UserLabel :name="item.friendInfo?.userInfo?.nick" :src="item.friendInfo?.userInfo?.avatar" />
+        <UserLabel style="max-width: 11rem" :name="item.friendInfo?.userInfo?.nick" :src="item.friendInfo?.userInfo?.avatar" />
         <div class="flex space-x-1 items-center">
           <div class="">
             <div class="label-unread">
@@ -189,7 +189,7 @@ const handleReject = async () => {
       <!-- 这里添加陌生人列表 -->
       <div @click="doChannelSwitch(item)" v-for="item in strangersList" :key="item.id" class="sider-item"
         :class="item.id === chat.curChannel?.id ? ['active'] : []">
-        <UserLabel :name="item.friendInfo?.userInfo?.nick" :src="item.friendInfo?.userInfo?.avatar" />
+        <UserLabel style="max-width: 11rem" :name="item.friendInfo?.userInfo?.nick" :src="item.friendInfo?.userInfo?.avatar" />
         <div class="flex space-x-1 items-center">
           <n-tooltip trigger="hover" v-if="!isFriendRequesting(item.friendInfo?.userInfo?.id ?? '')">
             <template #trigger>

@@ -329,7 +329,7 @@ export const useChatStore = defineStore({
 
       const countMap = await this.channelUnreadCount();
       this.unreadCountMap = countMap;
-      console.log('countMap', countMap);
+      // console.log('countMap', countMap);
 
       return tree;
     },
@@ -484,6 +484,22 @@ export const useChatStore = defineStore({
 
     async botList() {
       const resp = await api.get<PaginationListResponse<UserInfo>>('api/v1/bot-list', {});
+      return resp?.data;
+    },
+
+    async channelInfoGet(id: string) {
+      const resp = await api.get<{ item: SChannel }>(`api/v1/channel-info`, { params: { id } });
+      return resp?.data;
+    },
+
+    // 编辑频道信息
+    async channelInfoEdit(id: string, updates: {
+      name?: string;
+      note?: string;
+      permType?: string;
+      sortOrder?: number;
+    }) {
+      const resp = await api.post<{ message: string }>(`api/v1/channel-info-edit`, updates, { params: { id } });
       return resp?.data;
     },
 

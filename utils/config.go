@@ -21,6 +21,7 @@ type AppConfig struct {
 	ImageCompress             bool   `json:"imageCompress" yaml:"imageCompress"`
 	DSN                       string `json:"-" yaml:"dbUrl" koanf:"dbUrl"`
 	BuiltInSealBotEnable      bool   `json:"builtInSealBotEnable" yaml:"builtInSealBotEnable"` // 内置小海豹启用
+	Version                   int    `json:"version" yaml:"version"`
 }
 
 // 注: 实验型使用koanf，其实从需求上讲目前并无必要
@@ -37,6 +38,7 @@ func ReadConfig() *AppConfig {
 		ImageCompress:             true,
 		DSN:                       "./data/chat.db",
 		BuiltInSealBotEnable:      true,
+		Version:                   1,
 	}
 
 	lo.Must0(k.Load(structs.Provider(&config, "yaml"), nil))

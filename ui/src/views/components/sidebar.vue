@@ -196,7 +196,7 @@ const aaa = ref(false);
                   <template v-else>
                     <!-- 公开频道 -->
                     <n-icon :component="IconNumber"></n-icon>
-                    <span>{{ `${i.name}${suffix(i)} (${(i as any).membersCount})` }}</span>
+                    <span class="text-more" style="max-width: 10rem">{{ `${i.name}${suffix(i)} (${(i as any).membersCount})` }}</span>
                   </template>
                 </div>
 
@@ -249,7 +249,7 @@ const aaa = ref(false);
                       </template>
                       <template v-else>
                         <n-icon :component="IconNumber"></n-icon>
-                        <span>{{ `${child.name}${suffix(child)} (${(child as any).membersCount})` }}</span>
+                        <span class="text-more" style="max-width: 9.5rem">{{ `${child.name}${suffix(child)} (${(child as any).membersCount})` }}</span>
                       </template>
                     </div>
 
@@ -265,7 +265,7 @@ const aaa = ref(false);
                           { label: '进入', key: 'enter', item: child },
                           { label: '频道管理', key: 'manage', item: child },
                           { label: '退出', key: 'leave', item: i, show: i.permType === 'non-public' },
-                          { label: '解散', key: 'dissolve', item: i, }
+                          { label: '解散', key: 'dissolve', item: child, }
                         ]" @select="handleSelect">
                           <n-button @click.stop quaternary circle size="tiny">
                             <template #icon>
@@ -276,7 +276,7 @@ const aaa = ref(false);
                           </n-button>
                         </n-dropdown>
 
-                        <n-button quaternary circle size="tiny" @click.stop="handleSelect('manage', { item: i })">
+                        <n-button quaternary circle size="tiny" @click.stop="handleSelect('manage', { item: child })">
                           <template #icon>
                             <SettingsSharp />
                           </template>

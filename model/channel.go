@@ -19,6 +19,8 @@ type ChannelModel struct {
 	UserID       string `json:"userId"`                 // 创建者ID
 	PermType     string `json:"permType"`               // public 公开 non-public 非公开 private 私聊
 
+	SortOrder int `json:"sortOrder" gorm:"index"` // 优先级序号，越大越靠前
+
 	FriendInfo   *FriendModel `json:"friendInfo,omitempty" gorm:"-"`
 	MembersCount int          `json:"membersCount" gorm:"-"`
 }
@@ -30,6 +32,16 @@ func (*ChannelModel) TableName() string {
 func (m *ChannelModel) UpdateRecentSent() {
 	m.RecentSentAt = time.Now().UnixMilli()
 	db.Model(m).Update("recent_sent_at", m.RecentSentAt)
+}
+
+// ChannelInfoEdit 可修改内容: 名称，简介，公开或非公开，成员正在输入提示，优先级序号
+func ChannelInfoEdit(channelId string, updates *ChannelModel) error {
+	if err := db.Model(&ChannelModel{}).
+		Where("id = ?", channelId).Select("name", "note", "perm_type", "sort_order").
+		Updates(updates).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *ChannelModel) GetPrivateUserIDs() []string {
