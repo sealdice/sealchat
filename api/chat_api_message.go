@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"sealchat/service"
 	"strconv"
 	"strings"
 	"time"
@@ -97,35 +98,6 @@ func apiMessageCreate(ctx *ChatContext, data *struct {
 	}
 	channelData := channel.ToProtocolType()
 
-	// 如果是私聊，使得双方可见
-	if channel.PermType == "private" {
-		// ids := channel.GetPrivateUserIDs()
-		// model.FriendRelationSetVisible(ids[0], ids[1])
-		model.FriendRelationSetVisibleById(channel.ID)
-		_ = model.ChannelReadInit(data.ChannelID, privateOtherUser)
-
-		// 发送快速更新通知
-		ctx.BroadcastToUserJSON(privateOtherUser, map[string]any{
-			"op":        0,
-			"type":      "message-created-notice",
-			"channelId": data.ChannelID,
-		})
-	} else {
-		// 给当前在线人都通知一遍
-		var uids []string
-		ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*WsSyncConn, *ConnInfo]) bool {
-			uids = append(uids, key)
-			return true
-		})
-		_ = model.ChannelReadInitInBatches(data.ChannelID, uids)
-		// 发送快速更新通知
-		ctx.BroadcastJSON(map[string]any{
-			"op":        0,
-			"type":      "message-created-notice",
-			"channelId": data.ChannelID,
-		})
-	}
-
 	var quote model.MessageModel
 	if data.QuoteID != "" {
 		db.Where("id = ?", data.QuoteID).Limit(1).Find(&quote)
@@ -179,6 +151,48 @@ func apiMessageCreate(ctx *ChatContext, data *struct {
 
 		if appConfig.BuiltInSealBotEnable {
 			builtinSealBotSolve(ctx, data, channelData)
+		}
+
+		// 处理维度提醒和消息通知
+		if channel.PermType == "private" {
+			// 如果是私聊，使得双方可见
+			// ids := channel.GetPrivateUserIDs()
+			// model.FriendRelationSetVisible(ids[0], ids[1])
+			model.FriendRelationSetVisibleById(channel.ID)
+			_ = model.ChannelReadInit(data.ChannelID, privateOtherUser)
+
+			// 发送快速更新通知
+			ctx.BroadcastToUserJSON(privateOtherUser, map[string]any{
+				"op":        0,
+				"type":      "message-created-notice",
+				"channelId": data.ChannelID,
+			})
+		} else {
+			// 给当前在线人都通知一遍
+			var uids []string
+			ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*WsSyncConn, *ConnInfo]) bool {
+				uids = append(uids, key)
+				return true
+			})
+
+			// 找出当前频道在线的人
+			var uidsOnline []string
+			if x, exists := ctx.ChannelUsersMap.Load(data.ChannelID); exists {
+				x.Range(func(key string) bool {
+					uidsOnline = append(uidsOnline, key)
+					return true
+				})
+			}
+
+			_ = model.ChannelReadInitInBatches(data.ChannelID, uids)
+			_ = model.ChannelReadSetInBatch([]string{data.ChannelID}, uidsOnline)
+
+			// 发送快速更新通知
+			ctx.BroadcastJSON(map[string]any{
+				"op":        0,
+				"type":      "message-created-notice",
+				"channelId": data.ChannelID,
+			}, uidsOnline)
 		}
 
 		return messageData, nil
@@ -356,7 +370,8 @@ func builtinSealBotSolve(ctx *ChatContext, data *struct {
 }
 
 func apiUnreadCount(ctx *ChatContext, data *struct{}) (any, error) {
-	lst, err := model.ChannelUnreadFetch(ctx.User.ID)
+	chIds, _ := service.ChannelIdList(ctx.User.ID)
+	lst, err := model.ChannelUnreadFetch(chIds, ctx.User.ID)
 	if err != nil {
 		return nil, err
 	}

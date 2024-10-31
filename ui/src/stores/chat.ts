@@ -540,7 +540,12 @@ export const useChatStore = defineStore({
 chatEvent.on('message-created-notice', (data: any) => {
   const chId = data.channelId;
   const chat = useChatStore();
-  console.log('xx', chId, chat.channelTree, chat.channelTreePrivate);
+  // console.log('xx', chId, chat.channelTree, chat.channelTreePrivate);
+
+  if (chat.curChannel?.id === chId) {
+    return;
+  }
+
   if (chat.channelTree.find(c => c.id === chId) || chat.channelTreePrivate.find(c => c.id === chId)) {
     chat.unreadCountMap[chId] = (chat.unreadCountMap[chId] || 0) + 1;
   }

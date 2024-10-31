@@ -143,14 +143,17 @@ func RolePermApply(c *fiber.Ctx) error {
 
 	chId := model.ExtractChIdFromRoleId(req.RoleId)
 	if chId != "" {
-		if !CanWithChannelRole(c, chId, pm.PermFuncChannelManageRole, pm.PermFuncChannelManageRoleRoot, pm.PermModAdmin) {
-			return nil
-		}
+		isSystemAdmin := pm.CanWithSystemRole(getCurUser(c).ID, pm.PermModAdmin)
+		if !isSystemAdmin {
+			if !CanWithChannelRole(c, chId, pm.PermFuncChannelManageRole, pm.PermFuncChannelManageRoleRoot) {
+				return nil
+			}
 
-		// 如果没有root权限，不能操作群主的角色
-		if !pm.CanWithChannelRole(getCurUser(c).ID, chId, pm.PermFuncChannelManageRoleRoot) {
-			if strings.HasSuffix(req.RoleId, "-owner") {
-				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "无权限访问"})
+			// 如果没有root权限，不能操作群主的角色
+			if !pm.CanWithChannelRole(getCurUser(c).ID, chId, pm.PermFuncChannelManageRoleRoot) {
+				if strings.HasSuffix(req.RoleId, "-owner") {
+					return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "无权限访问"})
+				}
 			}
 		}
 	} else {

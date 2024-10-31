@@ -1,6 +1,6 @@
 <script setup lang="tsx">
 import ChatItem from './components/chat-item.vue';
-import { computed, ref, watch, h, onMounted, onBeforeMount, nextTick, type Component, inject } from 'vue'
+import { computed, ref, watch, h, onMounted, onBeforeMount, nextTick, type Component, inject, reactive } from 'vue'
 import { VirtualList } from 'vue-tiny-virtual-list';
 import { chatEvent, useChatStore } from '@/stores/chat';
 import type { Event, Message } from '@satorijs/protocol'
@@ -75,7 +75,7 @@ async function replaceUsernames(text: string) {
   return replacedText;
 }
 
-const instantMessages = new Set<Message>();
+const instantMessages = reactive(new Set<Message>());
 
 const textToSend = ref('');
 const send = throttle(async () => {
@@ -105,7 +105,9 @@ const send = throttle(async () => {
     "user": user.info,
     "member": chat.curMember || undefined,
     "quote": replyTo,
-  }
+  };
+
+  (tmpMsg as any).failed = false;
   rows.value.push(tmpMsg);
   instantMessages.add(tmpMsg);
 
@@ -125,13 +127,18 @@ const send = throttle(async () => {
       rows.value.splice(index, 1);
     }
   } catch (e) {
-    message.error('消息发送失败');
+    message.error('发送失败,您可能没有权限在此频道发送消息');
     console.error('消息发送失败', e);
-    (tmpMsg as any).failed = true;
+
+    const index = rows.value.findIndex(msg => msg.id === tmpMsg.id);
+    if (index !== -1) {
+      (rows.value[index] as any).failed = true;
+      // rows.value.splice(index, 1);
+    }
   }
 
   scrollToBottom();
-}, 500)
+}, 500);
 
 const toBottom = () => {
   scrollToBottom();
@@ -473,9 +480,13 @@ const reachTop = throttle(async (evt: any) => {
   }
 }, 1000)
 
-const sendEmoji = throttle((i: UserEmojiModel) => {
-  chat.messageCreate(`<img src="id:${i.attachmentId}" />`);
+const sendEmoji = throttle(async (i: UserEmojiModel) => {
+  const resp = await chat.messageCreate(`<img src="id:${i.attachmentId}" />`);
   emojiPopoverShow.value = false;
+  if (!resp) {
+    message.error('发送失败,您可能没有权限在此频道发送消息');
+    return;
+  }
   toBottom();
 }, 1000);
 

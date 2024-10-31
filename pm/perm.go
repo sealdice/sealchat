@@ -77,6 +77,7 @@ func CanWithChannelRole(uid string, channelId string, permissions ...gorbac.Perm
 	return canBase(uid, channelId, "channel", permissions...)
 }
 
+// TODO: 是不是应该移动到service里，或者把services里的channel权限移动过来？
 func sysRolesInit() {
 	roleAdmin := gorbac.NewStdRole("sys-admin")
 	_ = roleAdmin.Assign(PermModAdmin)

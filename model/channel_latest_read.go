@@ -27,14 +27,14 @@ func (*ChannelLatestReadModel) TableName() string {
 	return "channel_latest_read"
 }
 
-func ChannelReadListByUserId(userId string) ([]*ChannelLatestReadModel, error) {
+func ChannelReadListByUserId(inChIds []string, userId string) ([]*ChannelLatestReadModel, error) {
 	var records []*ChannelLatestReadModel
-	err := db.Where("user_id = ?", userId).Find(&records).Error
+	err := db.Where("channel_id in ? and user_id = ?", inChIds, userId).Find(&records).Error
 	return records, err
 }
 
-func ChannelUnreadFetch(userId string) (map[string]int64, error) {
-	items, err := ChannelReadListByUserId(userId)
+func ChannelUnreadFetch(inChIds []string, userId string) (map[string]int64, error) {
+	items, err := ChannelReadListByUserId(inChIds, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +74,18 @@ func ChannelReadSet(channelId, userId string) error {
 		Where("channel_id = ? AND user_id = ?", channelId, userId).
 		Updates(map[string]any{
 			"message_time": time.Now().UnixMilli(),
+		}).Error
+}
+
+// ChannelReadSetInBatch 批量设置已读，但要求已存在
+func ChannelReadSetInBatch(channelIds []string, userIds []string) error {
+	now := time.Now().UnixMilli()
+
+	// 只更新已存在的记录
+	return db.Model(&ChannelLatestReadModel{}).
+		Where("channel_id IN ? AND user_id IN ?", channelIds, userIds).
+		Updates(map[string]any{
+			"message_time": now,
 		}).Error
 }
 

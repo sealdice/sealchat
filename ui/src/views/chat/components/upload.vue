@@ -56,11 +56,21 @@ const inputFile = async (newFile: any, oldFile: any) => {
       if (newFile.xhr.status === 200) {
         // 上传成功
         if (fileType === 'image') {
-          chat.messageCreate(`<img src="id:${newFile.response.files}" />`)
+          const resp = await chat.messageCreate(`<img src="id:${newFile.response.files}" />`)
+          if (!resp) {
+            message.error('发送失败,您可能没有权限在此频道发送消息');
+            return;
+          }
         }
         if (fileType === 'audio') {
-          chat.messageCreate(`<audio src="id:${newFile.response.files}" />`)
+          const resp = await chat.messageCreate(`<audio src="id:${newFile.response.files}" />`)
+          if (!resp) {
+            message.error('发送失败,您可能没有权限在此频道发送消息');
+            return;
+          }
         }
+
+        message.error('无法处理此格式的文件');
         console.log('success')
       } else {
         // 上传失败
@@ -100,6 +110,7 @@ const inputFilter = function (newFile: any, oldFile: any, prevent: any) {
       }
       dialogVisible.value = true;
     } else {
+      message.error('无法处理此格式的文件');
       return prevent()
     }
   }

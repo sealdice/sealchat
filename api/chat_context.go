@@ -31,8 +31,15 @@ func (ctx *ChatContext) BroadcastToUserJSON(userId string, data any) {
 	})
 }
 
-func (ctx *ChatContext) BroadcastJSON(data any) {
+func (ctx *ChatContext) BroadcastJSON(data any, ignoredUserIds []string) {
+	ignoredMap := make(map[string]bool)
+	for _, id := range ignoredUserIds {
+		ignoredMap[id] = true
+	}
 	ctx.UserId2ConnInfo.Range(func(key string, value *utils.SyncMap[*WsSyncConn, *ConnInfo]) bool {
+		if ignoredMap[key] {
+			return true
+		}
 		value.Range(func(key *WsSyncConn, value *ConnInfo) bool {
 			_ = value.Conn.WriteJSON(data)
 			return true
