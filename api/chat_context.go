@@ -22,6 +22,9 @@ type ChatContext struct {
 
 func (ctx *ChatContext) BroadcastToUserJSON(userId string, data any) {
 	value, _ := ctx.UserId2ConnInfo.Load(userId)
+	if value == nil {
+		return
+	}
 	value.Range(func(key *WsSyncConn, value *ConnInfo) bool {
 		_ = value.Conn.WriteJSON(data)
 		return true

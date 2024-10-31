@@ -2,14 +2,11 @@ import { defineStore } from "pinia"
 import type { UserEmojiModel, UserInfo } from "@/types";
 import Cookies from 'js-cookie';
 // import router from "@/router";
-
-import axiosFactory from "axios"
-import { cloneDeep } from "lodash-es";
-
 import type { AxiosResponse } from "axios";
 import { api } from "./_config";
 import { useChatStore } from "./chat";
-import { PermResult, type PermCheckKey, type SystemRolePermSheet } from "@/types-perm";
+import { PermResult, type PermCheckKey } from "@/types-perm";
+import type { SystemRolePermSheet } from "@/types-perm-system";
 
 interface UserState {
   _accessToken: string
@@ -205,7 +202,7 @@ export const useUserStore = defineStore({
     },
 
     // 满足任意一个即可，这个read是啥意思我也忘了
-    checkPerm(...keys: Array<PermCheckKey>) {
+    checkPerm(...keys: Array<keyof SystemRolePermSheet>) {
       for (let key of keys) {
         if (this.permSysMap[key] === PermResult.ALLOWED) {
           return true;

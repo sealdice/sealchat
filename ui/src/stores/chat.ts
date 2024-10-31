@@ -11,6 +11,7 @@ import { api, urlBase } from './_config';
 import { useMessage } from 'naive-ui';
 import { memoizeWithTimeout } from '@/utils/tools';
 import type { MenuOptions } from '@imengyu/vue3-context-menu';
+import type { PermTreeNode } from '@/types-perm';
 
 interface ChatState {
   subject: WebSocketSubject<any> | null;
@@ -500,6 +501,33 @@ export const useChatStore = defineStore({
       sortOrder?: number;
     }) {
       const resp = await api.post<{ message: string }>(`api/v1/channel-info-edit`, updates, { params: { id } });
+      return resp?.data;
+    },
+
+    // 获取频道权限树
+    async channelPermTree() {
+      const resp = await api.get<{ items: PermTreeNode[] }>('api/v1/channel-perm-tree');
+      return resp?.data;
+    },
+
+    // 获取系统权限树
+    async systemPermTree() {
+      const resp = await api.get<{ items: any }>('api/v1/system-perm-tree');
+      return resp?.data;
+    },
+
+    // 获取频道角色权限
+    async channelRolePermsGet(channelId: string, roleId: string) {
+      const resp = await api.get<{ data: any }>('api/v1/channel-role-perms', { params: { channelId, roleId } });
+      return resp?.data;
+    },
+
+    // 更新频道角色权限
+    async rolePermsSet(roleId: string, permissions: string[]) {
+      const resp = await api.post<{ data: boolean }>('api/v1/role-perms-apply', {
+        roleId, 
+        permissions
+      });
       return resp?.data;
     },
 

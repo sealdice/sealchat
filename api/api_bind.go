@@ -94,6 +94,9 @@ func Init(config *utils.AppConfig, uiStatic fs.FS) {
 	v1Auth.Get("/channel-member-list", ChannelMembers)
 	v1Auth.Post("/channel-info-edit", ChannelInfoEdit)
 	v1Auth.Get("/channel-info", ChannelInfoGet)
+	v1Auth.Get("/channel-perm-tree", ChannelPermTree)
+	v1Auth.Get("/channel-role-perms", ChannelRolePermGet)
+	v1Auth.Post("/role-perms-apply", RolePermApply)
 
 	v1Auth.Post("/user-role-link", UserRoleLink)
 	v1Auth.Post("/user-role-unlink", UserRoleUnlink)

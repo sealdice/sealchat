@@ -38,7 +38,7 @@ func roleCreate(channelID, key string, name string, f func(role string) []gorbac
 		return nil
 	}
 
-	pm.ChannelRoleSet(roleId, perms)
+	pm.ChannelRoleSetWithoutDB(roleId, perms)
 
 	return cr
 }

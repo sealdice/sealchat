@@ -3,11 +3,13 @@ package pm
 import (
 	"errors"
 	"fmt"
-	"github.com/mikespook/gorbac"
-	"github.com/samber/lo"
 	"log"
 	"sealchat/model"
+	"sealchat/pm/gen"
 	"sealchat/utils"
+
+	"github.com/mikespook/gorbac"
+	"github.com/samber/lo"
 )
 
 const (
@@ -151,7 +153,20 @@ func GetAllSysPermByUid(uid string) *utils.SyncSet[string] {
 	return permSet
 }
 
-func ChannelRoleSet(roleId string, perms []gorbac.Permission) {
+func PermissionStrListByRoleId(roleId string) []string {
+	r, _, err := perm.Get(roleId)
+	if err != nil {
+		return nil
+	}
+	if x, ok := r.(*gorbac.StdRole); ok {
+		return lo.Map(x.Permissions(), func(item gorbac.Permission, index int) string {
+			return item.ID()
+		})
+	}
+	return nil
+}
+
+func ChannelRoleSetWithoutDB(roleId string, perms []gorbac.Permission) {
 	roleCur := gorbac.NewStdRole(roleId)
 	for _, perm := range perms {
 		if err := roleCur.Assign(perm); err != nil {
@@ -166,4 +181,53 @@ func ChannelRoleSet(roleId string, perms []gorbac.Permission) {
 	if err := perm.Add(roleCur); err != nil {
 		log.Printf("添加角色到RBAC系统失败: %v", err)
 	}
+}
+
+func ChannelRolePermsGet(roleId string) []string {
+	r, _, err := perm.Get(roleId)
+	if err != nil {
+		return nil
+	}
+
+	if x, ok := r.(*gorbac.StdRole); ok {
+		return lo.Map(x.Permissions(), func(item gorbac.Permission, index int) string {
+			return item.ID()
+		})
+	}
+
+	return nil
+}
+
+// RolePermApply 应用权限
+func RolePermApply(roleId string, permLstNext []string) {
+	oldAllowed := PermissionStrListByRoleId(roleId)
+	newAllowed := permLstNext
+
+	// 因此 O - N 为需要被删除的， N - O 为需要被添加的
+	toDelete, toAdd := lo.Difference(oldAllowed, newAllowed)
+
+	// 对不规范的权限进行过滤
+	filterByMap := func(m map[string]string) func(string, int) bool {
+		return func(x string, _ int) bool {
+			_, ok := m[x]
+			return ok
+		}
+	}
+
+	chId := model.ExtractChIdFromRoleId(roleId)
+	if chId != "" {
+		toAdd = lo.Filter(toAdd, filterByMap(gen.PermChannelMap))
+	} else {
+		toAdd = lo.Filter(toAdd, filterByMap(gen.PermSystemMap))
+	}
+
+	_ = model.RolePermissionBatchCreate(roleId, toAdd)
+	_ = model.RolePermissionBatchDelete(roleId, toDelete)
+
+	// 设置内存中权限
+	var perms []gorbac.Permission
+	for _, i := range permLstNext {
+		perms = append(perms, gorbac.NewStdPermission(i))
+	}
+	ChannelRoleSetWithoutDB(roleId, perms)
 }

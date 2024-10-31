@@ -1,11 +1,14 @@
 package api
 
 import (
-	"github.com/gofiber/fiber/v2"
-
+	"net/http"
 	"sealchat/model"
 	"sealchat/pm"
+	"sealchat/pm/perm_tree"
 	"sealchat/utils"
+	"strings"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func ChannelRoles(c *fiber.Ctx) error {
@@ -96,5 +99,77 @@ func ChannelInfoGet(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"item": channel,
+	})
+}
+
+// ChannelPermTree 处理获取频道信息请求
+func ChannelPermTree(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"items": perm_tree.PermTreeChannel,
+	})
+}
+
+// ChannelRolePermGet 获取角色详细权限
+func ChannelRolePermGet(c *fiber.Ctx) error {
+	// 获取角色ID
+	roleId := c.Query("roleId")
+	if roleId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "角色ID不能为空",
+		})
+	}
+
+	// 获取角色权限
+	perms := pm.ChannelRolePermsGet(roleId)
+
+	return c.JSON(fiber.Map{
+		"data": perms,
+	})
+}
+
+// RolePermApply 更新角色权限
+func RolePermApply(c *fiber.Ctx) error {
+	// 获取请求体
+	var req struct {
+		RoleId      string   `json:"roleId"`
+		Permissions []string `json:"permissions"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "无效的请求体",
+		})
+	}
+
+	chId := model.ExtractChIdFromRoleId(req.RoleId)
+	if chId != "" {
+		if !CanWithChannelRole(c, chId, pm.PermFuncChannelManageRole, pm.PermFuncChannelManageRoleRoot, pm.PermModAdmin) {
+			return nil
+		}
+
+		// 如果没有root权限，不能操作群主的角色
+		if !pm.CanWithChannelRole(getCurUser(c).ID, chId, pm.PermFuncChannelManageRoleRoot) {
+			if strings.HasSuffix(req.RoleId, "-owner") {
+				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "无权限访问"})
+			}
+		}
+	} else {
+		if !CanWithSystemRole(c, pm.PermModAdmin) {
+			return nil
+		}
+	}
+
+	// 验证参数
+	if req.RoleId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "角色ID不能为空",
+		})
+	}
+
+	// 更新角色权限
+	pm.RolePermApply(req.RoleId, req.Permissions)
+
+	return c.JSON(fiber.Map{
+		"message": "更新成功",
 	})
 }

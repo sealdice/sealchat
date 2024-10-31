@@ -4,6 +4,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"sealchat/pm/gen"
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
@@ -84,6 +85,24 @@ func CanWithSystemRole2(c *fiber.Ctx, userId string, relations ...gorbac.Permiss
 // CanWithChannelRole 检查当前用户是否拥有指定项目的指定权限
 func CanWithChannelRole(c *fiber.Ctx, chId string, relations ...gorbac.Permission) bool {
 	ok := pm.CanWithChannelRole(getCurUser(c).ID, chId, relations...)
+
+	if !ok {
+		// 额外检查用户的系统级别权限
+		var rootPerm []gorbac.Permission
+		for _, i := range relations {
+			p := i.ID()
+			for key, _ := range gen.PermSystemMap {
+				if p == key {
+					rootPerm = append(rootPerm, gorbac.NewStdPermission(key))
+					break
+				}
+			}
+		}
+
+		userId := getCurUser(c).ID
+		ok = pm.CanWithSystemRole(userId, rootPerm...)
+	}
+
 	if !ok {
 		_ = c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "无权限访问"})
 	}

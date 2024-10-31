@@ -7,6 +7,7 @@ import TabMember from './TabMember.vue'
 import useRequest from 'vue-hooks-plus/es/useRequest';
 import { useChatStore } from '@/stores/chat';
 import { useI18n } from 'vue-i18n';
+import TabRoles from './TabRoles.vue'
 
 const message = useMessage();
 const dialog = useDialog();
@@ -122,9 +123,7 @@ const tabRef = ref('members');
       </n-tab-pane>
 
       <n-tab-pane name="members2" tab="权限配置">
-        <div class="mb-4 flex space-x-2">
-          <div>尚未制作完成</div>
-        </div>
+        <TabRoles :channel="channel" />
       </n-tab-pane>
     </n-tabs>
 

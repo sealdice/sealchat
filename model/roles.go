@@ -116,6 +116,11 @@ func ChannelRoleAllList(page, pageSize int) ([]*ChannelRoleModel, int64, error) 
 	})
 }
 
+// RolePermissionBatchDelete 批量删除角色权限
+func RolePermissionBatchDelete(roleId string, permissions []string) error {
+	return db.Unscoped().Delete(&RolePermissionModel{}, "role_id = ? and permission_id in ?", roleId, permissions).Error
+}
+
 // RolePermissionBatchCreate 批量创建角色权限
 func RolePermissionBatchCreate(roleID string, permissionIDs []string) error {
 	var rolePermissions []RolePermissionModel
@@ -136,14 +141,9 @@ func RolePermissionGet(id string) (*RolePermissionModel, error) {
 	return &rolePermission, err
 }
 
-// RolePermissionUpdate 更新角色权限
-func RolePermissionUpdate(rolePermission *RolePermissionModel) error {
-	return db.Save(rolePermission).Error
-}
-
-// RolePermissionDelete 删除角色权限
-func RolePermissionDelete(id string) error {
-	return db.Delete(&RolePermissionModel{}, "id = ?", id).Error
+// RolePermissionDeleteById 删除角色权限
+func RolePermissionDeleteById(id string) error {
+	return db.Unscoped().Delete(&RolePermissionModel{}, "id = ?", id).Error
 }
 
 // RolePermissionList 根据RoleID获取PermissionID的集合

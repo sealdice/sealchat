@@ -4,7 +4,7 @@ import { clone, times, uniqBy } from 'lodash-es';
 import { useDialog, useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch, type PropType } from 'vue';
 import UserLabelV from '@/components/UserLabelV.vue'
-import BtnPlus from './BtnPlus.vue'
+import BtnPlus from './BtnPlus.vue';
 import useRequest from 'vue-hooks-plus/es/useRequest';
 import { useChatStore } from '@/stores/chat';
 import { dialogAskConfirm } from '@/utils/dialog';

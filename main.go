@@ -18,6 +18,8 @@ import (
 //go:embed ui/dist
 var embedDirStatic embed.FS
 
+//go:generate go run ./pm/generator/
+
 func main() {
 	var opts struct {
 		Install   bool `short:"i" long:"install" description:"安装为系统服务"`
