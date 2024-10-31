@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"os"
 	"os/signal"
 	"time"
@@ -24,6 +25,7 @@ func main() {
 	var opts struct {
 		Install   bool `short:"i" long:"install" description:"安装为系统服务"`
 		Uninstall bool `long:"uninstall" description:"删除系统服务"`
+		Download  bool `short:"d" long:"download" description:"从github下载最新的压缩包"`
 	}
 	_, err := flags.ParseArgs(&opts, os.Args)
 	if err != nil {
@@ -37,6 +39,14 @@ func main() {
 
 	if opts.Uninstall {
 		serviceInstall(false)
+		return
+	}
+
+	if opts.Download {
+		err = downloadLatestRelease()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 		return
 	}
 

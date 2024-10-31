@@ -123,10 +123,20 @@ jobs:
           echo "::set-output name=SHORT_SHA::$(echo ${{ github.sha }} | cut -c1-7)"
           echo "::set-output name=DATE::$(date +%Y%m%d)"
 
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          echo "NOTES<<EOF" >> $GITHUB_ENV
+          git log --format='- %s' $(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Upload Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.slug.outputs.DATE }}-${{ steps.slug.outputs.SHORT_SHA }}
+          body: |
+            ## 更新说明
+            ${{ env.NOTES }}
           files: |
             release/sealchat_*_*_${{ matrix.name }}.*
         env:
