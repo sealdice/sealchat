@@ -332,6 +332,13 @@ const onScroll = (evt: any) => {
   // showButton.value = vl.clientRef.itemRefEl.clientHeight - vl.getOffset() > vl.clientRef.itemRefEl.clientHeight / 2
 }
 
+let isOnIME = false;
+addEventListener("compositionstart", ()=> {
+  isOnIME = true;
+})
+addEventListener("compositionend", ()=> {
+  isOnIME = false;
+})
 const pauseKeydown = ref(false);
 const keyDown = function (e: KeyboardEvent) {
   if (pauseKeydown.value) return;
@@ -342,7 +349,7 @@ const keyDown = function (e: KeyboardEvent) {
     return;
   }
 
-  if (e.key === 'Enter' && (!e.ctrlKey) && (!e.shiftKey)) {
+  if (e.key === 'Enter' && (!e.ctrlKey) && (!e.shiftKey) && (!isOnIME)) {
     send();
     e.preventDefault();
 
